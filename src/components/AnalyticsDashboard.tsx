@@ -48,7 +48,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ session 
     txt += `🏆 *CURRENT STANDINGS & LEADERBOARD*\n`;
     stats.forEach((st, idx) => {
       const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-      txt += `${medal} *${st.player.name}* | ${st.matchesWon}W-${st.matchesLost}L | Diff: ${st.pointDiff > 0 ? '+' : ''}${st.pointDiff} | Elo: ${st.rating}\n`;
+      txt += `${medal} *${st.player.name}* | ${st.matchesWon}W-${st.matchesLost}L | Diff: ${st.pointDiff > 0 ? '+' : ''}${st.pointDiff}\n`;
     });
     txt += `━━━━━━━━━━━━━━━━━━━━\n`;
     txt += `📊 Completed: ${completedMatches.length}/${totalMatches} matches (${totalPointsScored} pts scored)\n`;

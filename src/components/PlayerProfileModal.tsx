@@ -56,7 +56,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
                 )}
               </div>
               <p className="text-xs text-slate-400">
-                Tier {player.skillLevel || 'A'} • Elo: {player.currentRating}
+                Tier {player.skillLevel || 'A'}
               </p>
             </div>
           </div>
@@ -73,7 +73,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6">
           {/* Quick Metrics */}
           {playerStat && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 text-center">
                 <span className="text-[11px] text-slate-400 block font-medium">Record (W-L)</span>
                 <span className="text-lg font-bold text-white font-mono">
@@ -88,14 +88,6 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
                   {playerStat.pointDiff > 0 ? `+${playerStat.pointDiff}` : playerStat.pointDiff}
                 </span>
                 <span className="text-[10px] text-slate-400 block">{playerStat.pointsScored} PF / {playerStat.pointsConceded} PA</span>
-              </div>
-
-              <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 text-center">
-                <span className="text-[11px] text-slate-400 block font-medium">Rating</span>
-                <span className="text-lg font-bold text-emerald-400 font-mono">
-                  {playerStat.rating}
-                </span>
-                <span className="text-[10px] text-slate-400 block">Initial: {player.initialRating}</span>
               </div>
 
               <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 text-center">

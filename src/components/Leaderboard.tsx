@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
 import { TournamentSession, PlayerStats, Player } from '../types/badminton';
 import { computePlayerStats } from '../utils/ranking';
-import { 
-  Trophy, 
-  Flame, 
-  TrendingUp, 
-  TrendingDown, 
-  ArrowUpDown, 
-  Award, 
-  Zap, 
+import {
+  Trophy,
+  Flame,
+  ArrowUpDown,
+  Award,
   HeartHandshake,
-  Swords,
   ChevronRight
 } from 'lucide-react';
 
@@ -20,19 +16,18 @@ interface LeaderboardProps {
 }
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlayer }) => {
-  const [sortBy, setSortBy] = useState<'rank' | 'winRate' | 'pointDiff' | 'rating' | 'wins'>('rank');
+  const [sortBy, setSortBy] = useState<'rank' | 'winRate' | 'pointDiff' | 'wins'>('rank');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
 
   const stats = computePlayerStats(session.players, session.matches);
 
-  // Sorting
+  // Sorting (rank already factors in rating as an internal tiebreaker — see ranking.ts)
   const sortedStats = [...stats].sort((a, b) => {
     let diff = 0;
     if (sortBy === 'rank') diff = a.rank - b.rank;
     else if (sortBy === 'wins') diff = b.matchesWon - a.matchesWon;
     else if (sortBy === 'winRate') diff = b.winRate - a.winRate;
     else if (sortBy === 'pointDiff') diff = b.pointDiff - a.pointDiff;
-    else if (sortBy === 'rating') diff = b.rating - a.rating;
 
     return sortAsc ? -diff : diff;
   });
@@ -60,10 +55,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
         <div>
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-400 shrink-0" />
-            <span>Individual Player Rankings & Elo Standings</span>
+            <span>Individual Player Rankings</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time individual performance tracked across rotating doubles pairs. Point diff and Elo update after every match.
+            Real-time individual performance tracked across rotating doubles pairs. Point diff updates after every match.
           </p>
         </div>
 
@@ -107,10 +102,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                   <div className="text-[11px] text-slate-400">
                     {st.matchesPlayed} played • <span className="text-emerald-400 font-semibold">{st.matchesWon}W</span>-<span className="text-rose-400 font-semibold">{st.matchesLost}L</span>
                   </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="font-mono font-black text-base text-emerald-400">{st.rating}</div>
-                  <div className="text-[11px] text-slate-400">Elo</div>
                 </div>
               </div>
 
@@ -162,12 +153,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                   </div>
                 </th>
                 <th className="py-3.5 px-4 font-semibold">Player</th>
-                <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('rating')}>
-                  <div className="flex items-center justify-center gap-1">
-                    <span>Elo Rating</span>
-                    <ArrowUpDown className="w-3 h-3 text-emerald-400" />
-                  </div>
-                </th>
                 <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('wins')}>
                   <div className="flex items-center justify-center gap-1">
                     <span>Played (W / L)</span>
@@ -232,32 +217,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                             )}
                           </div>
                         </div>
-                      </div>
-                    </td>
-
-                    {/* Elo Rating */}
-                    <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                      <div className="flex flex-col items-center">
-                        <span className="font-mono font-black text-sm text-emerald-400">
-                          {st.rating}
-                        </span>
-                        {st.ratingChange !== 0 && (
-                          <span
-                            className={`text-[10px] font-mono font-semibold flex items-center gap-0.5 ${
-                              st.ratingChange > 0 ? 'text-emerald-400' : 'text-rose-400'
-                            }`}
-                          >
-                            {st.ratingChange > 0 ? (
-                              <>
-                                <TrendingUp className="w-2.5 h-2.5" /> +{st.ratingChange}
-                              </>
-                            ) : (
-                              <>
-                                <TrendingDown className="w-2.5 h-2.5" /> {st.ratingChange}
-                              </>
-                            )}
-                          </span>
-                        )}
                       </div>
                     </td>
 

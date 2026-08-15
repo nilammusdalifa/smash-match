@@ -8,8 +8,8 @@ import {
   Plus,
   Download,
   RotateCcw,
+  MoreVertical,
   Users,
-  Layers,
   BarChart3,
   Calendar,
   Grid,
@@ -181,9 +181,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="btn-session-options"
                 onClick={() => setShowMenu(!showMenu)}
+                title="More options"
                 className="p-2.5 sm:p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700 hover:bg-slate-700 transition-all cursor-pointer"
               >
-                <RotateCcw className="w-4 h-4" />
+                <MoreVertical className="w-4 h-4" />
               </button>
 
               {showMenu && (
@@ -281,7 +282,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Trophy className="w-5 h-5 sm:w-4 sm:h-4" />
             <span className="text-[11px] sm:text-xs">
               <span className="sm:hidden">Ranks</span>
-              <span className="hidden sm:inline">Player Rankings & Elo</span>
+              <span className="hidden sm:inline">Player Rankings</span>
             </span>
           </button>
 

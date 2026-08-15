@@ -149,7 +149,7 @@ export const PlayerMatrix: React.FC<PlayerMatrixProps> = ({ session }) => {
             >
               {session.players.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} (Elo {p.currentRating})
+                  {p.name}
                 </option>
               ))}
             </select>
@@ -177,7 +177,7 @@ export const PlayerMatrix: React.FC<PlayerMatrixProps> = ({ session }) => {
             >
               {session.players.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} (Elo {p.currentRating})
+                  {p.name}
                 </option>
               ))}
             </select>

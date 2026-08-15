@@ -415,7 +415,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
                 <h3 className="text-base font-bold text-white">Create Custom Doubles Match</h3>
-                <p className="text-xs text-slate-400">Assemble pairs manually or auto-balance based on Elo rating.</p>
+                <p className="text-xs text-slate-400">Assemble pairs manually, or auto-balance for a fair matchup.</p>
               </div>
               <button
                 onClick={() => setShowCustomModal(false)}
@@ -429,7 +429,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
             <div className="bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-xl flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center space-x-2 text-xs text-emerald-300 font-medium">
                 <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Auto-Balance Pairs (Elo Balanced)</span>
+                <span>Auto-Balance Pairs</span>
               </div>
               <button
                 onClick={handleAutoBalanceCustom}
@@ -450,7 +450,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                 >
                   {session.players.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.currentRating})
+                      {p.name}
                     </option>
                   ))}
                 </select>
@@ -462,7 +462,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                 >
                   {session.players.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.currentRating})
+                      {p.name}
                     </option>
                   ))}
                 </select>
@@ -480,7 +480,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                 >
                   {session.players.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.currentRating})
+                      {p.name}
                     </option>
                   ))}
                 </select>
@@ -492,7 +492,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                 >
                   {session.players.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.currentRating})
+                      {p.name}
                     </option>
                   ))}
                 </select>

@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { TournamentSession } from '../types/badminton';
 import { soundManager } from '../utils/audio';
-import { 
-  Trophy, 
-  Volume2, 
-  VolumeX, 
-  Plus, 
-  Download, 
-  RotateCcw, 
-  Users, 
-  Layers, 
+import {
+  Trophy,
+  Volume2,
+  VolumeX,
+  Plus,
+  Download,
+  RotateCcw,
+  Users,
+  Layers,
   BarChart3,
   Calendar,
-  Grid
+  Grid,
+  Share2
 } from 'lucide-react';
 import { exportSessionToJSON } from '../utils/storage';
 
@@ -35,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [soundOn, setSoundOn] = useState<boolean>(soundManager.isSoundEnabled());
   const [showMenu, setShowMenu] = useState<boolean>(false);
+  const [linkCopied, setLinkCopied] = useState<boolean>(false);
 
   const toggleSound = () => {
     const next = !soundOn;
@@ -44,6 +46,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     if (next) {
       soundManager.playPointChime(1);
     }
+  };
+
+  const handleShareLiveLink = () => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?view=${session.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2500);
   };
 
   const completedMatches = session.matches.filter((m) => m.status === 'completed').length;
@@ -115,6 +124,26 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Download className="w-4 h-4" />
             </button>
+
+            {/* Share Live Link + PIN (organizer + umpire only) */}
+            {!readOnly && (
+              <div className="hidden md:flex items-center space-x-2">
+                <button
+                  id="btn-share-live-link"
+                  onClick={handleShareLiveLink}
+                  title="Copy a view-only link to share"
+                  className="p-2.5 sm:p-2 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-all cursor-pointer"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+                <span className="text-xs text-slate-400 font-mono px-2 py-1 rounded-md bg-slate-800 border border-slate-700">
+                  PIN: {session.pin}
+                </span>
+                {linkCopied && (
+                  <span className="text-xs text-emerald-400 font-medium">Copied!</span>
+                )}
+              </div>
+            )}
 
             {/* Reset / New Session */}
             {!readOnly && (

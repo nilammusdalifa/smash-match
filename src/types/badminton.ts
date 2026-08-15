@@ -11,7 +11,7 @@ export interface Player {
   initialRating: number;
   currentRating: number;
   gender?: 'M' | 'F' | 'Other';
-  skillLevel?: 'Beginner' | 'Intermediate' | 'Advanced' | 'Pro';
+  skillLevel?: 'A' | 'B' | 'C';
   active: boolean;
   notes?: string;
 }

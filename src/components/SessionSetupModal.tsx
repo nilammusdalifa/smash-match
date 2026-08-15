@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Player, GameRules, MatchmakingType, TournamentSession } from '../types/badminton';
-import { DEFAULT_RULES, DEFAULT_8_PLAYERS, createNewSession } from '../utils/storage';
+import { DEFAULT_RULES, DEFAULT_PLAYERS, createNewSession } from '../utils/storage';
 import { generateId } from '../utils/scheduler';
 import { 
   X, 
@@ -28,9 +28,9 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
   const [matchmakingType, setMatchmakingType] = useState<MatchmakingType>('rotating_doubles');
   const [pointsToWin, setPointsToWin] = useState<number>(30);
   const [maxPointsCap, setMaxPointsCap] = useState<number>(30);
-  const [players, setPlayers] = useState<Player[]>([...DEFAULT_8_PLAYERS]);
+  const [players, setPlayers] = useState<Player[]>([...DEFAULT_PLAYERS]);
   const [newPlayerName, setNewPlayerName] = useState<string>('');
-  const [newPlayerSkill, setNewPlayerSkill] = useState<'Beginner' | 'Intermediate' | 'Advanced' | 'Pro'>('Intermediate');
+  const [newPlayerSkill, setNewPlayerSkill] = useState<'A' | 'B' | 'C'>('A');
   const [bulkText, setBulkText] = useState<string>('');
   const [showBulkInput, setShowBulkInput] = useState<boolean>(false);
 
@@ -39,8 +39,8 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
     const newP: Player = {
       id: generateId(),
       name: newPlayerName.trim(),
-      initialRating: newPlayerSkill === 'Pro' ? 1280 : newPlayerSkill === 'Advanced' ? 1240 : newPlayerSkill === 'Intermediate' ? 1200 : 1150,
-      currentRating: newPlayerSkill === 'Pro' ? 1280 : newPlayerSkill === 'Advanced' ? 1240 : newPlayerSkill === 'Intermediate' ? 1200 : 1150,
+      initialRating: newPlayerSkill === 'A' ? 1200 : newPlayerSkill === 'B' ? 1150 : 1100,
+      currentRating: newPlayerSkill === 'A' ? 1200 : newPlayerSkill === 'B' ? 1150 : 1100,
       skillLevel: newPlayerSkill,
       gender: 'M',
       active: true,
@@ -66,7 +66,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
       name: pName,
       initialRating: 1200,
       currentRating: 1200,
-      skillLevel: 'Intermediate',
+      skillLevel: 'A',
       active: true,
     }));
 
@@ -266,10 +266,10 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPlayers([...DEFAULT_8_PLAYERS])}
+                  onClick={() => setPlayers([...DEFAULT_PLAYERS])}
                   className="text-xs text-slate-400 hover:text-white"
                 >
-                  Load 8 Sample
+                  Load Sample
                 </button>
               </div>
             </div>
@@ -314,10 +314,9 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
                     onChange={(e) => setNewPlayerSkill(e.target.value as any)}
                     className="flex-1 sm:flex-none bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2.5 sm:py-2 text-xs text-slate-300"
                   >
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                    <option value="Pro">Pro</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
                   </select>
                   <button
                     type="button"

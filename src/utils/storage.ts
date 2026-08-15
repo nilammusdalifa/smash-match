@@ -13,15 +13,14 @@ export const DEFAULT_RULES: GameRules = {
   changeEndsAtScore: 15,
 };
 
-export const DEFAULT_8_PLAYERS: Player[] = [
-  { id: 'p1', name: 'Raden', initialRating: 1200, currentRating: 1200, skillLevel: 'Intermediate', active: true },
-  { id: 'p2', name: 'Nilam', initialRating: 1200, currentRating: 1200, skillLevel: 'Intermediate', active: true },
-  { id: 'p3', name: 'Fahmi', initialRating: 1200, currentRating: 1200, skillLevel: 'Intermediate', active: true },
-  { id: 'p4', name: 'Eric', initialRating: 1200, currentRating: 1200, skillLevel: 'Intermediate', active: true },
-  { id: 'p5', name: 'Novi', initialRating: 1200, currentRating: 1200, skillLevel: 'Intermediate', active: true },
-  { id: 'p6', name: 'Bernard', initialRating: 1200, currentRating: 1200, skillLevel: 'Intermediate', active: true },
-  { id: 'p7', name: 'Marvin', initialRating: 1200, currentRating: 1200, skillLevel: 'Intermediate', active: true },
-  { id: 'p8', name: 'Player 8', initialRating: 1200, currentRating: 1200, skillLevel: 'Intermediate', active: true },
+export const DEFAULT_PLAYERS: Player[] = [
+  { id: 'p1', name: 'Raden', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
+  { id: 'p2', name: 'Nilam', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
+  { id: 'p3', name: 'Fahmi', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
+  { id: 'p4', name: 'Eric', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
+  { id: 'p5', name: 'Novi', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
+  { id: 'p6', name: 'Bernard', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
+  { id: 'p7', name: 'Marvin', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
 ];
 
 /**
@@ -29,7 +28,7 @@ export const DEFAULT_8_PLAYERS: Player[] = [
  */
 export function createNewSession(
   name: string = 'Friday Night Social Doubles',
-  players: Player[] = DEFAULT_8_PLAYERS,
+  players: Player[] = DEFAULT_PLAYERS,
   courtCount: number = 1,
   rules: GameRules = DEFAULT_RULES,
   matchmakingType: MatchmakingType = 'rotating_doubles'
@@ -62,7 +61,7 @@ export function createNewSession(
  * Create seed session with some played matches to make the initial experience rich and interactive
  */
 export function createDefaultSeedSession(): TournamentSession {
-  const session = createNewSession('Champions Lap 5 — Minggu, 16 Agustus 2026 (15:00-18:00)', DEFAULT_8_PLAYERS, 1, DEFAULT_RULES, 'rotating_doubles');
+  const session = createNewSession('Champions Lap 5 — Minggu, 16 Agustus 2026 (15:00-18:00)', DEFAULT_PLAYERS, 1, DEFAULT_RULES, 'rotating_doubles');
   session.date = '2026-08-16';
 
   // Pre-fill first match as completed with a realistic score so user immediately sees stats

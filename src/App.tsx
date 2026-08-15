@@ -5,13 +5,11 @@ import {
   Player, 
   CourtNotification 
 } from './types/badminton';
-import { 
-  getAllSessions, 
-  saveSession, 
-  createDefaultSeedSession, 
-  createNewSession,
-  DEFAULT_8_PLAYERS,
-  DEFAULT_RULES 
+import {
+  getAllSessions,
+  saveSession,
+  createDefaultSeedSession,
+  createNewSession
 } from './utils/storage';
 import { calculateDoublesEloChange } from './utils/ranking';
 import { soundManager } from './utils/audio';

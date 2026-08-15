@@ -56,7 +56,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
                 )}
               </div>
               <p className="text-xs text-slate-400">
-                {player.skillLevel || 'Intermediate'} • Elo: {player.currentRating}
+                Tier {player.skillLevel || 'A'} • Elo: {player.currentRating}
               </p>
             </div>
           </div>

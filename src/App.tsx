@@ -9,7 +9,9 @@ import {
   getAllSessions,
   saveSession,
   createDefaultSeedSession,
-  createNewSession
+  createNewSession,
+  subscribeToRemoteSession,
+  pushSessionToFirebase
 } from './utils/storage';
 import { ensureAnonymousAuth } from './utils/firebase';
 import { calculateDoublesEloChange } from './utils/ranking';
@@ -24,6 +26,7 @@ import { ScorekeeperModal } from './components/ScorekeeperModal';
 import { SessionSetupModal } from './components/SessionSetupModal';
 import { PlayerProfileModal } from './components/PlayerProfileModal';
 import { NotificationsBanner } from './components/NotificationsBanner';
+import { RolePickerModal } from './components/RolePickerModal';
 import confetti from 'canvas-confetti';
 
 export default function App() {
@@ -40,14 +43,33 @@ export default function App() {
       });
   }, []);
 
-  // Session State
-  const [session, setSession] = useState<TournamentSession>(() => {
+  // Remote "view" mode: ?view=<sessionId> in the URL
+  const [viewSessionId] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get('view')
+  );
+  const [remoteRole, setRemoteRole] = useState<'player' | 'umpire' | null>(null);
+  const isRemoteMode = viewSessionId !== null;
+
+  // Session State — null only possible while a remote session is still loading
+  const [session, setSession] = useState<TournamentSession | null>(() => {
+    if (isRemoteMode) return null;
     const saved = getAllSessions();
     if (saved && saved.length > 0) {
       return saved[0];
     }
     return createDefaultSeedSession();
   });
+
+  // In remote mode, once a role is picked, subscribe to the live session
+  useEffect(() => {
+    if (!isRemoteMode || !viewSessionId || !remoteRole || !authReady) return;
+    const unsubscribe = subscribeToRemoteSession(viewSessionId, setSession);
+    return unsubscribe;
+  }, [isRemoteMode, viewSessionId, remoteRole, authReady]);
+
+  // In remote mode, writes go straight to Firebase instead of localStorage —
+  // this isn't "this device's" session to keep locally.
+  const persistSession = isRemoteMode ? pushSessionToFirebase : saveSession;
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'analytics'>('courts');
@@ -159,7 +181,7 @@ export default function App() {
           matches: prev.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m)),
         };
 
-        saveSession(nextSession);
+        persistSession(nextSession);
         return nextSession;
       }
 
@@ -168,7 +190,7 @@ export default function App() {
         ...prev,
         matches: prev.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m)),
       };
-      saveSession(nextSession);
+      persistSession(nextSession);
       return nextSession;
     });
   };
@@ -215,7 +237,7 @@ export default function App() {
         `Match starting on Court ${courtId}. ${p1} and ${p2} versus ${p3} and ${p4}. Ready, play!`
       );
 
-      saveSession(nextSession);
+      persistSession(nextSession);
       return nextSession;
     });
   };
@@ -231,7 +253,7 @@ export default function App() {
 
   // Quick Assign Next Match
   const handleQuickAssignNextMatch = (courtId: string) => {
-    const nextMatch = session.matches.find((m) => m.status === 'scheduled');
+    const nextMatch = session!.matches.find((m) => m.status === 'scheduled');
     if (nextMatch) {
       handleStartMatch(nextMatch.id, courtId);
     }
@@ -244,7 +266,7 @@ export default function App() {
         ...prev,
         matches: [...prev.matches, newMatch],
       };
-      saveSession(nextSession);
+      persistSession(nextSession);
       return nextSession;
     });
   };
@@ -252,11 +274,11 @@ export default function App() {
   // Reset Session
   const handleResetSession = () => {
     const reset = createNewSession(
-      session.name,
-      session.players.map((p) => ({ ...p, currentRating: p.initialRating })),
-      session.courtCount,
-      session.rules,
-      session.matchmakingType
+      session!.name,
+      session!.players.map((p) => ({ ...p, currentRating: p.initialRating })),
+      session!.courtCount,
+      session!.rules,
+      session!.matchmakingType
     );
     setSession(reset);
   };
@@ -281,11 +303,23 @@ export default function App() {
     );
   }
 
+  if (isRemoteMode && !remoteRole) {
+    return <RolePickerModal sessionId={viewSessionId!} onResolved={setRemoteRole} />;
+  }
+
+  if (isRemoteMode && !session) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-slate-400 text-sm">Connecting to live session...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
       {/* Top Navigation */}
       <Navbar
-        session={session}
+        session={session!}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenNewSessionModal={() => setShowSetupModal(true)}
@@ -296,7 +330,7 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {activeTab === 'courts' && (
           <CourtBoard
-            session={session}
+            session={session!}
             onUpdateMatchScore={handleUpdateMatchScore}
             onStartMatch={handleStartMatch}
             onOpenScorekeeper={handleOpenScorekeeper}
@@ -306,7 +340,7 @@ export default function App() {
 
         {activeTab === 'schedule' && (
           <MatchQueue
-            session={session}
+            session={session!}
             onUpdateMatchScore={handleUpdateMatchScore}
             onStartMatch={handleStartMatch}
             onOpenScorekeeper={handleOpenScorekeeper}
@@ -316,20 +350,20 @@ export default function App() {
 
         {activeTab === 'leaderboard' && (
           <Leaderboard
-            session={session}
+            session={session!}
             onSelectPlayer={(p) => setSelectedProfilePlayer(p)}
           />
         )}
 
         {activeTab === 'synergy' && (
           <PlayerMatrix
-            session={session}
+            session={session!}
           />
         )}
 
         {activeTab === 'analytics' && (
           <AnalyticsDashboard
-            session={session}
+            session={session!}
           />
         )}
       </main>
@@ -344,7 +378,7 @@ export default function App() {
       {scorekeeperMatch && (
         <ScorekeeperModal
           match={scorekeeperMatch}
-          rules={session.rules}
+          rules={session!.rules}
           onClose={() => setScorekeeperMatch(null)}
           onSaveAndFinish={(mId, t1, t2) => {
             handleUpdateMatchScore(mId, t1, t2, true);
@@ -366,7 +400,7 @@ export default function App() {
       {selectedProfilePlayer && (
         <PlayerProfileModal
           player={selectedProfilePlayer}
-          session={session}
+          session={session!}
           onClose={() => setSelectedProfilePlayer(null)}
         />
       )}

@@ -15,12 +15,18 @@ export const RolePickerModal: React.FC<RolePickerModalProps> = ({ sessionId, onR
   const handleSubmitPin = async () => {
     setChecking(true);
     setError('');
-    const ok = await claimUmpireAccess(sessionId, pin.trim());
-    setChecking(false);
-    if (ok) {
-      onResolved('umpire');
-    } else {
-      setError('Incorrect PIN. Ask the organizer for the right code.');
+    try {
+      const ok = await claimUmpireAccess(sessionId, pin.trim());
+      if (ok) {
+        onResolved('umpire');
+      } else {
+        setError('Incorrect PIN. Ask the organizer for the right code.');
+      }
+    } catch (err) {
+      console.error('claimUmpireAccess threw:', err);
+      setError('Something went wrong, try again.');
+    } finally {
+      setChecking(false);
     }
   };
 

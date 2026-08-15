@@ -11,6 +11,7 @@ import {
   createDefaultSeedSession,
   createNewSession
 } from './utils/storage';
+import { ensureAnonymousAuth } from './utils/firebase';
 import { calculateDoublesEloChange } from './utils/ranking';
 import { soundManager } from './utils/audio';
 import { Navbar } from './components/Navbar';
@@ -26,6 +27,19 @@ import { NotificationsBanner } from './components/NotificationsBanner';
 import confetti from 'canvas-confetti';
 
 export default function App() {
+  // Wait for silent anonymous auth before doing anything session-related,
+  // so every device has a uid by the time it creates or claims a session.
+  const [authReady, setAuthReady] = useState<boolean>(false);
+
+  useEffect(() => {
+    ensureAnonymousAuth()
+      .then(() => setAuthReady(true))
+      .catch((err) => {
+        console.error('Firebase anonymous auth failed:', err);
+        setAuthReady(true); // don't block the app forever; local-only mode still works
+      });
+  }, []);
+
   // Session State
   const [session, setSession] = useState<TournamentSession>(() => {
     const saved = getAllSessions();
@@ -258,6 +272,14 @@ export default function App() {
       origin: { y: 0.6 },
     });
   };
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-slate-400 text-sm">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">

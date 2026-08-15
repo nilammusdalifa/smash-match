@@ -20,6 +20,7 @@ interface CourtBoardProps {
   onStartMatch: (matchId: string, courtId: string) => void;
   onOpenScorekeeper: (match: Match) => void;
   onQuickAssignNextMatch: (courtId: string) => void;
+  readOnly?: boolean;
 }
 
 export const CourtBoard: React.FC<CourtBoardProps> = ({
@@ -28,6 +29,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
   onStartMatch,
   onOpenScorekeeper,
   onQuickAssignNextMatch,
+  readOnly = false,
 }) => {
   // Local timer ticker for active match duration
   const [, setTick] = useState<number>(0);
@@ -188,6 +190,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                           </div>
 
                           {/* Point Controls */}
+                          {!readOnly && (
                           <div className="mt-3 flex items-center justify-center gap-2">
                             <button
                               id={`btn-sub-t1-${activeMatch.id}`}
@@ -212,6 +215,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               +1 Pt
                             </button>
                           </div>
+                          )}
                         </div>
 
                         {/* Scores in the middle */}
@@ -233,6 +237,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                             </span>
                           )}
 
+                          {!readOnly && (
                           <div className="mt-2 flex items-center justify-center gap-3">
                             <button
                               id={`btn-open-scorekeeper-${activeMatch.id}`}
@@ -250,6 +255,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               <Edit3 className="w-3 h-3" /> Enter Final Score
                             </button>
                           </div>
+                          )}
                         </div>
 
                         {/* Team 2 Box */}
@@ -265,6 +271,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                           </div>
 
                           {/* Point Controls */}
+                          {!readOnly && (
                           <div className="mt-3 flex items-center justify-center gap-2">
                             <button
                               id={`btn-sub-t2-${activeMatch.id}`}
@@ -289,12 +296,13 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               +1 Pt
                             </button>
                           </div>
+                          )}
                         </div>
                       </div>
                     </div>
 
                     {/* Quick Finish Match Button, or Direct Final-Score Entry */}
-                    {editingScoreMatchId === activeMatch.id ? (
+                    {!readOnly && (editingScoreMatchId === activeMatch.id ? (
                       <div className="bg-slate-950/60 p-3 rounded-xl border border-emerald-500/40 space-y-3">
                         <div className="flex items-center justify-center gap-3">
                           <div className="flex flex-col items-center gap-1">
@@ -359,7 +367,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                           <span>Finish & Save Match Score</span>
                         </button>
                       </div>
-                    )}
+                    ))}
 
                     {/* Resting Players info if 8 players 1 court */}
                     {restingPlayerNames.length > 0 && (
@@ -384,7 +392,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                         No active match in progress. Launch the next scheduled match or assign players.
                       </p>
                     </div>
-                    {nextMatch && (
+                    {nextMatch && !readOnly && (
                       <button
                         id={`btn-start-next-${court.id}`}
                         onClick={() => onStartMatch(nextMatch.id, court.id)}
@@ -432,7 +440,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                         >
                           <Bell className="w-4 h-4" />
                         </button>
-                        {!activeMatch && (
+                        {!activeMatch && !readOnly && (
                           <button
                             onClick={() => onStartMatch(nextMatch.id, court.id)}
                             className="flex-1 sm:flex-none px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-all cursor-pointer"

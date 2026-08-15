@@ -22,6 +22,7 @@ interface NavbarProps {
   setActiveTab: (tab: 'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'analytics') => void;
   onOpenNewSessionModal: () => void;
   onResetSession: () => void;
+  readOnly?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -30,6 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onOpenNewSessionModal,
   onResetSession,
+  readOnly = false,
 }) => {
   const [soundOn, setSoundOn] = useState<boolean>(soundManager.isSoundEnabled());
   const [showMenu, setShowMenu] = useState<boolean>(false);
@@ -115,6 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* Reset / New Session */}
+            {!readOnly && (
             <button
               id="btn-new-session"
               onClick={onOpenNewSessionModal}
@@ -124,8 +127,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden sm:inline">New Session</span>
               <span className="sm:hidden">New</span>
             </button>
+            )}
 
             {/* Secondary actions dropdown */}
+            {!readOnly && (
             <div className="relative">
               <button
                 id="btn-session-options"
@@ -162,6 +167,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
 

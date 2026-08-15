@@ -71,6 +71,9 @@ export default function App() {
   // this isn't "this device's" session to keep locally.
   const persistSession = isRemoteMode ? pushSessionToFirebase : saveSession;
 
+  // Remote Players (as opposed to Umpires) get a read-only view — no edit controls.
+  const isReadOnlyPlayer = isRemoteMode && remoteRole === 'player';
+
   // Active Tab
   const [activeTab, setActiveTab] = useState<'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'analytics'>('courts');
 
@@ -324,6 +327,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenNewSessionModal={() => setShowSetupModal(true)}
         onResetSession={handleResetSession}
+        readOnly={isReadOnlyPlayer}
       />
 
       {/* Main App Container */}
@@ -335,6 +339,7 @@ export default function App() {
             onStartMatch={handleStartMatch}
             onOpenScorekeeper={handleOpenScorekeeper}
             onQuickAssignNextMatch={handleQuickAssignNextMatch}
+            readOnly={isReadOnlyPlayer}
           />
         )}
 
@@ -345,6 +350,7 @@ export default function App() {
             onStartMatch={handleStartMatch}
             onOpenScorekeeper={handleOpenScorekeeper}
             onAddCustomMatch={handleAddCustomMatch}
+            readOnly={isReadOnlyPlayer}
           />
         )}
 

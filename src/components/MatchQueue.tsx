@@ -22,6 +22,7 @@ interface MatchQueueProps {
   onStartMatch: (matchId: string, courtId: string) => void;
   onOpenScorekeeper: (match: Match) => void;
   onAddCustomMatch: (match: Match) => void;
+  readOnly?: boolean;
 }
 
 export const MatchQueue: React.FC<MatchQueueProps> = ({
@@ -30,6 +31,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   onStartMatch,
   onOpenScorekeeper,
   onAddCustomMatch,
+  readOnly = false,
 }) => {
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -149,6 +151,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
         </div>
 
         {/* Action Buttons */}
+        {!readOnly && (
         <div className="flex flex-wrap items-center gap-2">
           <button
             id="btn-open-custom-match"
@@ -159,6 +162,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
             <span>Create Custom Match</span>
           </button>
         </div>
+        )}
       </div>
 
       {/* Filter Tabs & Search */}
@@ -343,6 +347,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                   </div>
 
                   {/* Actions */}
+                  {!readOnly && (
                   <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 w-full sm:w-auto">
                     {isEditing ? (
                       <>
@@ -395,6 +400,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                       </>
                     )}
                   </div>
+                  )}
                 </div>
               </div>
             );

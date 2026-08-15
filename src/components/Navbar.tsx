@@ -172,8 +172,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
             )}
 
-            {/* Secondary actions dropdown (Reset / Export) — same reasoning */}
-            {!readOnly && !hideSessionControls && (
+            {/* Secondary actions dropdown. The button itself only needs
+                !readOnly, so an Umpire on mobile can still reach Share Live
+                Link — session-lifecycle items inside are separately gated
+                on !hideSessionControls. */}
+            {!readOnly && (
             <div className="relative">
               <button
                 id="btn-session-options"
@@ -184,29 +187,47 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {showMenu && (
-                <div className="absolute right-0 mt-2 w-48 rounded-xl bg-slate-900 border border-slate-700 shadow-xl py-1 z-50 text-xs">
+                <div className="absolute right-0 mt-2 w-52 rounded-xl bg-slate-900 border border-slate-700 shadow-xl py-1 z-50 text-xs">
+                  {/* Share Live Link — mobile equivalent of the desktop-only icon+PIN badge above */}
                   <button
-                    onClick={() => {
-                      setShowMenu(false);
-                      if (confirm('Reset current match scores and schedule back to initial state?')) {
-                        onResetSession();
-                      }
-                    }}
-                    className="w-full text-left px-4 py-2 text-rose-400 hover:bg-slate-800 flex items-center space-x-2"
+                    onClick={handleShareLiveLink}
+                    className="w-full text-left px-4 py-2 text-emerald-400 hover:bg-slate-800 flex items-center gap-2 md:hidden"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Reset Current Session</span>
+                    <Share2 className="w-3.5 h-3.5 shrink-0" />
+                    <span className="flex flex-col">
+                      <span>{linkCopied ? 'Copied!' : 'Share Live Link'}</span>
+                      {session.pin && (
+                        <span className="text-slate-400 font-mono text-[11px]">PIN: {session.pin}</span>
+                      )}
+                    </span>
                   </button>
-                  <button
-                    onClick={() => {
-                      setShowMenu(false);
-                      exportSessionToJSON(session);
-                    }}
-                    className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2 sm:hidden"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Export JSON Backup</span>
-                  </button>
+
+                  {!hideSessionControls && (
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        if (confirm('Reset current match scores and schedule back to initial state?')) {
+                          onResetSession();
+                        }
+                      }}
+                      className="w-full text-left px-4 py-2 text-rose-400 hover:bg-slate-800 flex items-center space-x-2"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset Current Session</span>
+                    </button>
+                  )}
+                  {!hideSessionControls && (
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        exportSessionToJSON(session);
+                      }}
+                      className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2 sm:hidden"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Export JSON Backup</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

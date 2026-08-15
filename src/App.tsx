@@ -11,9 +11,10 @@ import {
   createDefaultSeedSession,
   createNewSession,
   subscribeToRemoteSession,
-  pushSessionToFirebase
+  pushSessionToFirebase,
+  pushSessionOwnershipToFirebase
 } from './utils/storage';
-import { ensureAnonymousAuth } from './utils/firebase';
+import { auth, ensureAnonymousAuth } from './utils/firebase';
 import { calculateDoublesEloChange } from './utils/ranking';
 import { soundManager } from './utils/audio';
 import { Navbar } from './components/Navbar';
@@ -66,6 +67,24 @@ export default function App() {
     const unsubscribe = subscribeToRemoteSession(viewSessionId, setSession);
     return unsubscribe;
   }, [isRemoteMode, viewSessionId, remoteRole, authReady]);
+
+  // The `session` useState initializer runs on the very first render, before
+  // `ensureAnonymousAuth()` has resolved — so a session created right then gets
+  // an empty `ownerUid` and never reaches Firebase. Once auth is ready, stamp
+  // the real uid and (re)write `pin`/`ownerUid` to their own Firebase paths.
+  // Both nodes are write-once, so this succeeds exactly when they were never
+  // written and is a harmless rejection otherwise. Local sessions only —
+  // remote/subscribed sessions aren't this device's to own.
+  useEffect(() => {
+    if (!authReady || isRemoteMode) return;
+    if (!session || session.ownerUid) return;
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const repaired: TournamentSession = { ...session, ownerUid: uid };
+    setSession(repaired);
+    saveSession(repaired);
+    pushSessionOwnershipToFirebase(repaired);
+  }, [authReady, isRemoteMode, session]);
 
   // In remote mode, writes go straight to Firebase instead of localStorage —
   // this isn't "this device's" session to keep locally.
@@ -328,6 +347,7 @@ export default function App() {
         onOpenNewSessionModal={() => setShowSetupModal(true)}
         onResetSession={handleResetSession}
         readOnly={isReadOnlyPlayer}
+        hideSessionControls={isRemoteMode}
       />
 
       {/* Main App Container */}

@@ -23,7 +23,15 @@ interface NavbarProps {
   setActiveTab: (tab: 'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'analytics') => void;
   onOpenNewSessionModal: () => void;
   onResetSession: () => void;
+  /** Player (view-only) mode: hides everything that mutates the session. */
   readOnly?: boolean;
+  /**
+   * True for ANY remote device (Player *and* Umpire). Session-lifecycle actions
+   * (New Session, Reset, Export) are device-local: on a remote device they'd
+   * silently fork off a brand-new local session while the live subscription
+   * kept overwriting the screen. Umpires still keep all scoring controls.
+   */
+  hideSessionControls?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -33,6 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenNewSessionModal,
   onResetSession,
   readOnly = false,
+  hideSessionControls = false,
 }) => {
   const [soundOn, setSoundOn] = useState<boolean>(soundManager.isSoundEnabled());
   const [showMenu, setShowMenu] = useState<boolean>(false);
@@ -136,17 +145,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
-                <span className="text-xs text-slate-400 font-mono px-2 py-1 rounded-md bg-slate-800 border border-slate-700">
-                  PIN: {session.pin}
-                </span>
+                {/* Remote (Umpire) sessions carry no PIN — it lives only on the
+                    organizer's local copy, and an Umpire already typed it in. */}
+                {session.pin && (
+                  <span className="text-xs text-slate-400 font-mono px-2 py-1 rounded-md bg-slate-800 border border-slate-700">
+                    PIN: {session.pin}
+                  </span>
+                )}
                 {linkCopied && (
                   <span className="text-xs text-emerald-400 font-medium">Copied!</span>
                 )}
               </div>
             )}
 
-            {/* Reset / New Session */}
-            {!readOnly && (
+            {/* Reset / New Session — device-local lifecycle actions, hidden on
+                every remote device (Player and Umpire alike). */}
+            {!readOnly && !hideSessionControls && (
             <button
               id="btn-new-session"
               onClick={onOpenNewSessionModal}
@@ -158,8 +172,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
             )}
 
-            {/* Secondary actions dropdown */}
-            {!readOnly && (
+            {/* Secondary actions dropdown (Reset / Export) — same reasoning */}
+            {!readOnly && !hideSessionControls && (
             <div className="relative">
               <button
                 id="btn-session-options"

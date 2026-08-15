@@ -16,9 +16,11 @@ export const RolePickerModal: React.FC<RolePickerModalProps> = ({ sessionId, onR
     setChecking(true);
     setError('');
     try {
-      const ok = await claimUmpireAccess(sessionId, pin.trim());
-      if (ok) {
+      const result = await claimUmpireAccess(sessionId, pin.trim());
+      if (result === 'ok') {
         onResolved('umpire');
+      } else if (result === 'unavailable') {
+        setError("Live sync isn't available right now — try again in a moment.");
       } else {
         setError('Incorrect PIN. Ask the organizer for the right code.');
       }

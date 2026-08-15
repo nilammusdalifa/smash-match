@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "sessions": {
+      "$sessionId": {
+        "data": {
+          ".read": true,
+          ".write": "!data.exists() || auth.uid === root.child('sessions').child($sessionId).child('ownerUid').val() || (root.child('sessions').child($sessionId).child('pin').exists() && root.child('sessions').child($sessionId).child('editorClaims').child(auth.uid).val() === root.child('sessions').child($sessionId).child('pin').val())"
+        },
+        "pin": {
+          ".write": "!data.exists()"
+        },
+        "ownerUid": {
+          ".write": "!data.exists()"
+        },
+        "editorClaims": {
+          "$uid": {
+            ".write": "auth.uid === $uid",
+            ".validate": "newData.val() === root.child('sessions').child($sessionId).child('pin').val()"
+          }
+        }
+      }
+    }
+  }
+}

@@ -34,12 +34,60 @@ function generateSessionPin(): string {
  * `sessions/{id}/data` sees it live. Fire-and-forget: localStorage remains
  * the source of truth for the organizer's own device even if this fails
  * (e.g. offline).
+ *
+ * `pin` and `ownerUid` are deliberately stripped from this payload: they live
+ * at their own sibling paths (`sessions/{id}/pin`, `sessions/{id}/ownerUid`)
+ * where the security rules can read them, and duplicating the PIN inside the
+ * world-readable `data` blob would leak it to every Player.
+ *
+ * The whole body is wrapped in try/catch because Firebase's `set()` validates
+ * its argument *synchronously* and throws (rather than rejecting) on e.g. an
+ * `undefined` value anywhere in the object graph. This function is called from
+ * inside React state updaters, so an escaping throw would blow up a render.
  */
 export function pushSessionToFirebase(session: TournamentSession): void {
   if (typeof window === 'undefined' || !auth.currentUser) return;
-  set(ref(database, `sessions/${session.id}/data`), session).catch((err) => {
+  try {
+    const { pin: _pin, ownerUid: _ownerUid, ...dataToSync } = session;
+    void _pin;
+    void _ownerUid;
+    // JSON round-trip drops `undefined`-valued properties (e.g. a match's
+    // cleared `winnerTeamId`), which Firebase rejects outright.
+    const clean = JSON.parse(JSON.stringify(dataToSync));
+    set(ref(database, `sessions/${session.id}/data`), clean).catch((err) => {
+      console.error('Failed to sync session to Firebase:', err);
+    });
+  } catch (err) {
     console.error('Failed to sync session to Firebase:', err);
-  });
+  }
+}
+
+/**
+ * Writes a session's `pin` and `ownerUid` to their own sibling Firebase paths.
+ * The deployed security rules look these up via `root.child(...)` to decide who
+ * may write `sessions/{id}/data` and whether a submitted Umpire PIN matches, so
+ * they must exist as real nodes — not just as fields inside the data blob.
+ *
+ * Both nodes are write-once (`".write": "!data.exists()"`), so re-running this
+ * for an already-stamped session is a harmless no-op rejection. Fire-and-forget,
+ * same as `pushSessionToFirebase`.
+ */
+export function pushSessionOwnershipToFirebase(session: TournamentSession): void {
+  if (typeof window === 'undefined' || !auth.currentUser) return;
+  try {
+    if (session.pin) {
+      set(ref(database, `sessions/${session.id}/pin`), session.pin).catch((err) => {
+        console.error('Failed to sync session PIN to Firebase:', err);
+      });
+    }
+    if (session.ownerUid) {
+      set(ref(database, `sessions/${session.id}/ownerUid`), session.ownerUid).catch((err) => {
+        console.error('Failed to sync session owner to Firebase:', err);
+      });
+    }
+  } catch (err) {
+    console.error('Failed to sync session ownership to Firebase:', err);
+  }
 }
 
 /**
@@ -72,6 +120,11 @@ export function createNewSession(
     ownerUid: auth.currentUser?.uid || '',
     pin: generateSessionPin(),
   };
+
+  // Stamp `pin`/`ownerUid` at their own Firebase paths first, so the rules that
+  // guard `sessions/{id}/data` have something to resolve against. If auth isn't
+  // ready yet this is a no-op — App.tsx re-stamps once `authReady` flips true.
+  pushSessionOwnershipToFirebase(newSession);
 
   saveSession(newSession);
   setActiveSessionId(newSession.id);
@@ -138,7 +191,16 @@ export function getAllSessions(): TournamentSession[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as TournamentSession[];
+    const sessions = JSON.parse(raw) as TournamentSession[];
+    // Sessions saved before this feature existed have no `pin`/`ownerUid` keys
+    // at all. Normalize so the rest of the app can treat both as real strings.
+    // An empty `ownerUid` is the signal App.tsx uses to re-stamp ownership once
+    // anonymous auth is ready.
+    return sessions.map((s) => ({
+      ...s,
+      ownerUid: s.ownerUid ?? '',
+      pin: s.pin ?? generateSessionPin(),
+    }));
   } catch (e) {
     console.error('Failed to load sessions from storage:', e);
     return [];
@@ -213,6 +275,12 @@ export function exportSessionToJSON(session: TournamentSession): void {
 /**
  * Subscribes to a session's live data in Firebase (used by Player/Umpire
  * view mode). Returns an unsubscribe function.
+ *
+ * The remote `data` node intentionally carries no `pin`/`ownerUid` (see
+ * `pushSessionToFirebase`), so both are filled in as empty strings here to keep
+ * the in-memory `TournamentSession` shape honest. Neither is needed on a remote
+ * device: Umpires get write access via `editorClaims`, and the PIN badge is only
+ * meaningful on the organizer's own device.
  */
 export function subscribeToRemoteSession(
   sessionId: string,
@@ -220,25 +288,46 @@ export function subscribeToRemoteSession(
 ): () => void {
   const sessionRef = ref(database, `sessions/${sessionId}/data`);
   const handleValue = (snapshot: { exists: () => boolean; val: () => unknown }) => {
-    callback(snapshot.exists() ? (snapshot.val() as TournamentSession) : null);
+    if (!snapshot.exists()) {
+      callback(null);
+      return;
+    }
+    const remote = snapshot.val() as TournamentSession;
+    callback({
+      ...remote,
+      ownerUid: remote.ownerUid ?? '',
+      pin: remote.pin ?? '',
+    });
   };
   onValue(sessionRef, handleValue);
   return () => off(sessionRef, 'value', handleValue);
 }
 
 /**
+ * Outcome of an Umpire access claim.
+ * - `ok`         — the PIN matched and this device now holds an editor claim.
+ * - `wrong-pin`  — the database rejected the write, i.e. the PIN was wrong.
+ * - `unavailable`— live sync isn't usable right now (no anonymous auth uid yet),
+ *                  which is NOT the user's fault and must not read as a bad PIN.
+ */
+export type UmpireClaimResult = 'ok' | 'wrong-pin' | 'unavailable';
+
+/**
  * Attempts to claim Umpire (edit) access for this device by submitting a
  * PIN. The write only succeeds if the PIN matches the one stored on the
  * session — enforced by the Realtime Database security rules, not by this
- * function. Returns whether the claim succeeded.
+ * function.
  */
-export async function claimUmpireAccess(sessionId: string, enteredPin: string): Promise<boolean> {
+export async function claimUmpireAccess(
+  sessionId: string,
+  enteredPin: string
+): Promise<UmpireClaimResult> {
   const uid = auth.currentUser?.uid;
-  if (!uid) return false;
+  if (!uid) return 'unavailable';
   try {
     await set(ref(database, `sessions/${sessionId}/editorClaims/${uid}`), enteredPin);
-    return true;
+    return 'ok';
   } catch {
-    return false;
+    return 'wrong-pin';
   }
 }

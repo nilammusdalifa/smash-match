@@ -1,0 +1,6 @@
+{
+  "name": "SmashMatch - Badminton Doubles",
+  "description": "Automated doubles badminton matchmaking, rotating round-robin tournament engine, live court assignment notifications, scorekeeper, and individual player rankings.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

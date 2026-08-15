@@ -1,5 +1,7 @@
 import { TournamentSession, Player, GameRules, MatchmakingType } from '../types/badminton';
 import { generateSchedule, initializeCourts } from './scheduler';
+import { auth, database } from './firebase';
+import { ref, set, onValue, off } from 'firebase/database';
 
 const STORAGE_KEY = 'smashmatch_sessions_v1';
 const ACTIVE_SESSION_KEY = 'smashmatch_active_session_id';
@@ -22,6 +24,23 @@ export const DEFAULT_PLAYERS: Player[] = [
   { id: 'p6', name: 'Bernard', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
   { id: 'p7', name: 'Marvin', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
 ];
+
+function generateSessionPin(): string {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+/**
+ * Mirrors a session's data to Firebase so anyone subscribed to
+ * `sessions/{id}/data` sees it live. Fire-and-forget: localStorage remains
+ * the source of truth for the organizer's own device even if this fails
+ * (e.g. offline).
+ */
+export function pushSessionToFirebase(session: TournamentSession): void {
+  if (typeof window === 'undefined' || !auth.currentUser) return;
+  set(ref(database, `sessions/${session.id}/data`), session).catch((err) => {
+    console.error('Failed to sync session to Firebase:', err);
+  });
+}
 
 /**
  * Creates a brand new tournament session
@@ -50,6 +69,8 @@ export function createNewSession(
     currentRound: 1,
     totalRounds,
     isCompleted: false,
+    ownerUid: auth.currentUser?.uid || '',
+    pin: generateSessionPin(),
   };
 
   saveSession(newSession);
@@ -141,6 +162,7 @@ export function saveSession(session: TournamentSession): void {
   } catch (e) {
     console.error('Failed to save session to storage:', e);
   }
+  pushSessionToFirebase(session);
 }
 
 /**
@@ -186,4 +208,37 @@ export function exportSessionToJSON(session: TournamentSession): void {
   document.body.appendChild(downloadAnchor);
   downloadAnchor.click();
   downloadAnchor.remove();
+}
+
+/**
+ * Subscribes to a session's live data in Firebase (used by Player/Umpire
+ * view mode). Returns an unsubscribe function.
+ */
+export function subscribeToRemoteSession(
+  sessionId: string,
+  callback: (session: TournamentSession | null) => void
+): () => void {
+  const sessionRef = ref(database, `sessions/${sessionId}/data`);
+  const handleValue = (snapshot: { exists: () => boolean; val: () => unknown }) => {
+    callback(snapshot.exists() ? (snapshot.val() as TournamentSession) : null);
+  };
+  onValue(sessionRef, handleValue);
+  return () => off(sessionRef, 'value', handleValue);
+}
+
+/**
+ * Attempts to claim Umpire (edit) access for this device by submitting a
+ * PIN. The write only succeeds if the PIN matches the one stored on the
+ * session — enforced by the Realtime Database security rules, not by this
+ * function. Returns whether the claim succeeded.
+ */
+export async function claimUmpireAccess(sessionId: string, enteredPin: string): Promise<boolean> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return false;
+  try {
+    await set(ref(database, `sessions/${sessionId}/editorClaims/${uid}`), enteredPin);
+    return true;
+  } catch {
+    return false;
+  }
 }

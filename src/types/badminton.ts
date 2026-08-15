@@ -83,6 +83,8 @@ export interface TournamentSession {
   currentRound: number;
   totalRounds: number;
   isCompleted: boolean;
+  ownerUid: string;
+  pin: string;
 }
 
 export interface PlayerStats {

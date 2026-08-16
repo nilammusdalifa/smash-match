@@ -107,6 +107,15 @@ export function generateRotatingDoublesSchedule(
   const desiredRounds = Math.min(10, Math.max(5, n));
   let matchNum = 1;
 
+  // A=3, B=2, C=1 (untiered players count as a middle B) — used only to keep
+  // the two teams in a match roughly matched in strength, not to gate who
+  // can play at all.
+  const tierScore = (p: Player): number => {
+    if (p.skillLevel === 'A') return 3;
+    if (p.skillLevel === 'C') return 1;
+    return 2;
+  };
+
   for (let r = 1; r <= desiredRounds; r++) {
     // Sort players primarily by least games played, then random tiebreaker
     const pool = [...activePlayers].sort((a, b) => {
@@ -134,6 +143,18 @@ export function generateRotatingDoublesSchedule(
       ];
 
       configs.sort((cA, cB) => {
+        // Prefer the split that keeps both teams' combined tier closest —
+        // e.g. spreading a Tier A player across each team with a weaker
+        // partner, rather than stacking both strong players on one side.
+        const tierGap = (c: typeof cA) =>
+          Math.abs(
+            (tierScore(c.t1[0]) + tierScore(c.t1[1])) - (tierScore(c.t2[0]) + tierScore(c.t2[1]))
+          );
+        const tierGapA = tierGap(cA);
+        const tierGapB = tierGap(cB);
+        if (tierGapA !== tierGapB) return tierGapA - tierGapB;
+
+        // Tied on tier balance — fall back to minimizing repeat partnerships
         const costA =
           (partnerCounts.get(getPairKey(cA.t1[0].id, cA.t1[1].id)) || 0) +
           (partnerCounts.get(getPairKey(cA.t2[0].id, cA.t2[1].id)) || 0);

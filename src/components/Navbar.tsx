@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { TournamentSession } from '../types/badminton';
 import { soundManager } from '../utils/audio';
 import {
@@ -46,6 +46,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [soundOn, setSoundOn] = useState<boolean>(soundManager.isSoundEnabled());
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close the "more options" dropdown when clicking anywhere outside it
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu]);
 
   const toggleSound = () => {
     const next = !soundOn;
@@ -177,7 +190,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Link — session-lifecycle items inside are separately gated
                 on !hideSessionControls. */}
             {!readOnly && (
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
                 id="btn-session-options"
                 onClick={() => setShowMenu(!showMenu)}

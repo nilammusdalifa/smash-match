@@ -101,10 +101,10 @@ export const PlayerMatrix: React.FC<PlayerMatrixProps> = ({ session }) => {
         <div>
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             <HeartHandshake className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span>Doubles Partner Synergy & Matchup Matrix</span>
+            <span>Partner Synergy</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Discover which doubles pairings have the highest win rates and explore head-to-head match history.
+            See which pairs and matchups work best.
           </p>
         </div>
 
@@ -131,7 +131,7 @@ export const PlayerMatrix: React.FC<PlayerMatrixProps> = ({ session }) => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 border-b border-slate-800 pb-3">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <Swords className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>Head-to-Head & Partnership Duel Inspector</span>
+            <span>Head-to-Head</span>
           </h3>
           <span className="text-xs text-slate-400">Select any 2 players</span>
         </div>
@@ -224,9 +224,9 @@ export const PlayerMatrix: React.FC<PlayerMatrixProps> = ({ session }) => {
         <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <Users className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>Pairwise Partnership Performance Table</span>
+            <span>Partner Pairings</span>
           </h3>
-          <span className="text-xs text-slate-400">{synergyList.length} Unique Pair Combinations</span>
+          <span className="text-xs text-slate-400">{synergyList.length} pairs</span>
         </div>
 
         {synergyList.length === 0 ? (

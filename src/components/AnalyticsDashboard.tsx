@@ -69,10 +69,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ session 
         <div>
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span>Tournament Statistics & Analytics</span>
+            <span>Stats</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Key match metrics, scoring competitiveness, point distribution, and shareable club summaries.
+            Match stats and a shareable results summary.
           </p>
         </div>
 
@@ -146,7 +146,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ session 
         <div className="bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-800 space-y-4">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <PieChart className="w-4 h-4 text-emerald-400" />
-            <span>Match Competitiveness (Score Margin)</span>
+            <span>Match Competitiveness</span>
           </h3>
 
           <div className="space-y-3 text-xs">

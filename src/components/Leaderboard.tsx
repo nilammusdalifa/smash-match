@@ -55,10 +55,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
         <div>
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-400 shrink-0" />
-            <span>Individual Player Rankings</span>
+            <span>Player Rankings</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time individual performance tracked across rotating doubles pairs. Point diff updates after every match.
+            Updates live as matches finish.
           </p>
         </div>
 

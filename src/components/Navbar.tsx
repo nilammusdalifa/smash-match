@@ -266,7 +266,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Calendar className="w-5 h-5 sm:w-4 sm:h-4" />
             <span className="text-[11px] sm:text-xs">
               <span className="sm:hidden">Schedule</span>
-              <span className="hidden sm:inline">Match Schedule & Matchmaker</span>
+              <span className="hidden sm:inline">Schedule</span>
             </span>
           </button>
 
@@ -298,7 +298,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Users className="w-5 h-5 sm:w-4 sm:h-4" />
             <span className="text-[11px] sm:text-xs">
               <span className="sm:hidden">Synergy</span>
-              <span className="hidden sm:inline">Partner Synergy Matrix</span>
+              <span className="hidden sm:inline">Synergy</span>
             </span>
           </button>
 
@@ -314,7 +314,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <BarChart3 className="w-5 h-5 sm:w-4 sm:h-4" />
             <span className="text-[11px] sm:text-xs">
               <span className="sm:hidden">Stats</span>
-              <span className="hidden sm:inline">Tournament Analytics</span>
+              <span className="hidden sm:inline">Stats</span>
             </span>
           </button>
         </nav>

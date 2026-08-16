@@ -8,7 +8,6 @@ import {
 import {
   getAllSessions,
   saveSession,
-  createDefaultSeedSession,
   createNewSession,
   subscribeToRemoteSession,
   pushSessionToFirebase,
@@ -51,14 +50,12 @@ export default function App() {
   const [remoteRole, setRemoteRole] = useState<'player' | 'umpire' | null>(null);
   const isRemoteMode = viewSessionId !== null;
 
-  // Session State — null only possible while a remote session is still loading
+  // Session State — null while a remote session is still loading, or when
+  // this device has no session yet and needs to create its first one.
   const [session, setSession] = useState<TournamentSession | null>(() => {
     if (isRemoteMode) return null;
     const saved = getAllSessions();
-    if (saved && saved.length > 0) {
-      return saved[0];
-    }
-    return createDefaultSeedSession();
+    return saved && saved.length > 0 ? saved[0] : null;
   });
 
   // In remote mode, once a role is picked, subscribe to the live session
@@ -136,132 +133,136 @@ export default function App() {
     team2Score: number, 
     isCompleted?: boolean
   ) => {
-    setSession((prev) => {
-      const matchIdx = prev.matches.findIndex((m) => m.id === matchId);
-      if (matchIdx < 0) return prev;
+    // The session update is computed here as a plain value (not a setSession
+    // functional updater) specifically so the side effects below — sound,
+    // notification, persistence — run exactly once. React's StrictMode
+    // intentionally invokes functional updaters twice in development to
+    // catch impure ones; any side effect placed inside one fires twice too.
+    if (!session) return;
+    const matchIdx = session.matches.findIndex((m) => m.id === matchId);
+    if (matchIdx < 0) return;
 
-      const targetMatch = { ...prev.matches[matchIdx] };
-      const wasCompleted = targetMatch.status === 'completed';
+    const targetMatch = { ...session.matches[matchIdx] };
+    const wasCompleted = targetMatch.status === 'completed';
 
-      targetMatch.score = {
-        ...targetMatch.score,
-        team1Score,
-        team2Score,
-        isCompleted: !!isCompleted,
-        winnerTeamId: isCompleted ? (team1Score > team2Score ? 1 : 2) : undefined,
-      };
+    targetMatch.score = {
+      ...targetMatch.score,
+      team1Score,
+      team2Score,
+      isCompleted: !!isCompleted,
+      winnerTeamId: isCompleted ? (team1Score > team2Score ? 1 : 2) : undefined,
+    };
 
-      if (isCompleted && !wasCompleted) {
-        targetMatch.status = 'completed';
-        targetMatch.endTime = Date.now();
-        if (targetMatch.startTime) {
-          targetMatch.durationSeconds = Math.max(1, Math.floor((Date.now() - targetMatch.startTime) / 1000));
-        }
-
-        // Elo Rating Updates
-        const { team1Delta, team2Delta } = calculateDoublesEloChange(
-          [targetMatch.team1.player1, targetMatch.team1.player2],
-          [targetMatch.team2.player1, targetMatch.team2.player2],
-          team1Score,
-          team2Score
-        );
-
-        // Update player rating copy in session
-        const updatedPlayers = prev.players.map((p) => {
-          if (p.id === targetMatch.team1.player1.id || p.id === targetMatch.team1.player2.id) {
-            return { ...p, currentRating: Math.max(100, p.currentRating + team1Delta) };
-          }
-          if (p.id === targetMatch.team2.player1.id || p.id === targetMatch.team2.player2.id) {
-            return { ...p, currentRating: Math.max(100, p.currentRating + team2Delta) };
-          }
-          return p;
-        });
-
-        // Trigger notification
-        const winTeam = team1Score > team2Score ? targetMatch.team1 : targetMatch.team2;
-        const winNames = `${winTeam.player1.name} & ${winTeam.player2.name}`;
-        addNotification(
-          'Match Concluded',
-          `${winNames} won ${Math.max(team1Score, team2Score)}-${Math.min(team1Score, team2Score)}`,
-          targetMatch.courtName || 'Court 1',
-          'match_completed',
-          `Match finished on ${targetMatch.courtName || 'Court 1'}. Winners: ${winNames}.`
-        );
-
-        // Update court status (clear active match from court)
-        const updatedCourts = prev.courts.map((c) => {
-          if (c.currentMatchId === matchId) {
-            return { ...c, currentMatchId: undefined };
-          }
-          return c;
-        });
-
-        const nextSession: TournamentSession = {
-          ...prev,
-          players: updatedPlayers,
-          courts: updatedCourts,
-          matches: prev.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m)),
-        };
-
-        persistSession(nextSession);
-        return nextSession;
+    if (isCompleted && !wasCompleted) {
+      targetMatch.status = 'completed';
+      targetMatch.endTime = Date.now();
+      if (targetMatch.startTime) {
+        targetMatch.durationSeconds = Math.max(1, Math.floor((Date.now() - targetMatch.startTime) / 1000));
       }
 
-      // If just updating intermediate score during play
-      const nextSession: TournamentSession = {
-        ...prev,
-        matches: prev.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m)),
-      };
-      persistSession(nextSession);
-      return nextSession;
-    });
-  };
+      // Elo Rating Updates
+      const { team1Delta, team2Delta } = calculateDoublesEloChange(
+        [targetMatch.team1.player1, targetMatch.team1.player2],
+        [targetMatch.team2.player1, targetMatch.team2.player2],
+        team1Score,
+        team2Score
+      );
 
-  // Start match on specific court
-  const handleStartMatch = (matchId: string, courtId: string) => {
-    setSession((prev) => {
-      const matchIdx = prev.matches.findIndex((m) => m.id === matchId);
-      if (matchIdx < 0) return prev;
+      // Update player rating copy in session
+      const updatedPlayers = session.players.map((p) => {
+        if (p.id === targetMatch.team1.player1.id || p.id === targetMatch.team1.player2.id) {
+          return { ...p, currentRating: Math.max(100, p.currentRating + team1Delta) };
+        }
+        if (p.id === targetMatch.team2.player1.id || p.id === targetMatch.team2.player2.id) {
+          return { ...p, currentRating: Math.max(100, p.currentRating + team2Delta) };
+        }
+        return p;
+      });
 
-      const targetMatch = {
-        ...prev.matches[matchIdx],
-        status: 'in_progress' as const,
-        startTime: Date.now(),
-        courtId,
-        courtName: `Court ${courtId}`,
-      };
-
-      const updatedCourts = prev.courts.map((c) => {
-        if (c.id === courtId) {
-          return { ...c, currentMatchId: matchId };
+      // Update court status (clear active match from court)
+      const updatedCourts = session.courts.map((c) => {
+        if (c.currentMatchId === matchId) {
+          return { ...c, currentMatchId: undefined };
         }
         return c;
       });
 
-      const nextMatches = prev.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m));
       const nextSession: TournamentSession = {
-        ...prev,
+        ...session,
+        players: updatedPlayers,
         courts: updatedCourts,
-        matches: nextMatches,
+        matches: session.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m)),
       };
 
-      soundManager.playCourtChime();
-      const p1 = targetMatch.team1.player1.name;
-      const p2 = targetMatch.team1.player2.name;
-      const p3 = targetMatch.team2.player1.name;
-      const p4 = targetMatch.team2.player2.name;
-
-      addNotification(
-        'Match Starting',
-        `Court ${courtId}: ${p1} & ${p2} vs ${p3} & ${p4}`,
-        `Court ${courtId}`,
-        'match_start',
-        `Match starting on Court ${courtId}. ${p1} and ${p2} versus ${p3} and ${p4}. Ready, play!`
-      );
-
+      setSession(nextSession);
       persistSession(nextSession);
-      return nextSession;
+
+      // Trigger notification
+      const winTeam = team1Score > team2Score ? targetMatch.team1 : targetMatch.team2;
+      const winNames = `${winTeam.player1.name} & ${winTeam.player2.name}`;
+      addNotification(
+        'Match Concluded',
+        `${winNames} won ${Math.max(team1Score, team2Score)}-${Math.min(team1Score, team2Score)}`,
+        targetMatch.courtName || 'Court 1',
+        'match_completed',
+        `Match finished on ${targetMatch.courtName || 'Court 1'}. Winners: ${winNames}.`
+      );
+      return;
+    }
+
+    // If just updating intermediate score during play
+    const nextSession: TournamentSession = {
+      ...session,
+      matches: session.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m)),
+    };
+    setSession(nextSession);
+    persistSession(nextSession);
+  };
+
+  // Start match on specific court
+  const handleStartMatch = (matchId: string, courtId: string) => {
+    if (!session) return;
+    const matchIdx = session.matches.findIndex((m) => m.id === matchId);
+    if (matchIdx < 0) return;
+
+    const targetMatch = {
+      ...session.matches[matchIdx],
+      status: 'in_progress' as const,
+      startTime: Date.now(),
+      courtId,
+      courtName: `Court ${courtId}`,
+    };
+
+    const updatedCourts = session.courts.map((c) => {
+      if (c.id === courtId) {
+        return { ...c, currentMatchId: matchId };
+      }
+      return c;
     });
+
+    const nextMatches = session.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m));
+    const nextSession: TournamentSession = {
+      ...session,
+      courts: updatedCourts,
+      matches: nextMatches,
+    };
+
+    setSession(nextSession);
+    persistSession(nextSession);
+
+    soundManager.playCourtChime();
+    const p1 = targetMatch.team1.player1.name;
+    const p2 = targetMatch.team1.player2.name;
+    const p3 = targetMatch.team2.player1.name;
+    const p4 = targetMatch.team2.player2.name;
+
+    addNotification(
+      'Match Starting',
+      `Court ${courtId}: ${p1} & ${p2} vs ${p3} & ${p4}`,
+      `Court ${courtId}`,
+      'match_start',
+      `Match starting on Court ${courtId}. ${p1} and ${p2} versus ${p3} and ${p4}. Ready, play!`
+    );
   };
 
   // Open Scorekeeper modal
@@ -283,14 +284,26 @@ export default function App() {
 
   // Add Custom Match
   const handleAddCustomMatch = (newMatch: Match) => {
-    setSession((prev) => {
-      const nextSession: TournamentSession = {
-        ...prev,
-        matches: [...prev.matches, newMatch],
-      };
-      persistSession(nextSession);
-      return nextSession;
-    });
+    if (!session) return;
+    const nextSession: TournamentSession = {
+      ...session,
+      matches: [...session.matches, newMatch],
+    };
+    setSession(nextSession);
+    persistSession(nextSession);
+  };
+
+  // Edit a player's skill tier (cosmetic label only — doesn't touch rating,
+  // which isn't shown anywhere and drives matchmaking balance separately)
+  const handleUpdatePlayerTier = (playerId: string, tier: 'A' | 'B' | 'C') => {
+    if (!session) return;
+    const updatedPlayers = session.players.map((p) =>
+      p.id === playerId ? { ...p, skillLevel: tier } : p
+    );
+    const nextSession: TournamentSession = { ...session, players: updatedPlayers };
+    setSession(nextSession);
+    persistSession(nextSession);
+    setSelectedProfilePlayer((prev) => (prev && prev.id === playerId ? { ...prev, skillLevel: tier } : prev));
   };
 
   // Reset Session
@@ -334,6 +347,17 @@ export default function App() {
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-slate-400 text-sm">Connecting to live session...</div>
       </div>
+    );
+  }
+
+  // No local session yet (first-ever load, nothing saved) — go straight to
+  // setting up a real one instead of showing sample/demo data.
+  if (!isRemoteMode && !session) {
+    return (
+      <SessionSetupModal
+        onClose={() => {}}
+        onSessionCreated={handleSessionCreated}
+      />
     );
   }
 
@@ -428,17 +452,14 @@ export default function App() {
           player={selectedProfilePlayer}
           session={session!}
           onClose={() => setSelectedProfilePlayer(null)}
+          onUpdatePlayerTier={handleUpdatePlayerTier}
+          readOnly={isReadOnlyPlayer}
         />
       )}
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>SmashMatch • Doubles Tournament & Matchmaking Hub</span>
-          <span className="text-slate-400">
-            Engineered for rotating doubles round-robin & multi-court scalability
-          </span>
-        </div>
+        SmashMatch • Doubles Tournament & Matchmaking Hub
       </footer>
     </div>
   );

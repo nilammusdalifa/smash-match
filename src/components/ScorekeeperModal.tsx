@@ -168,7 +168,7 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 hidden sm:block">
-                BWF Doubles Rules • 1 Set to {targetScore} pts (Cap {maxCap})
+                {targetScore} points to win (cap {maxCap})
               </p>
             </div>
           </div>

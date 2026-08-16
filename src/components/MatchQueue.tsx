@@ -68,6 +68,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       return pNames.includes(q);
     }
     return true;
+  }).sort((a, b) => {
+    // Completed matches sink to the bottom (stable sort keeps everything
+    // else in its original round/match order — this is a no-op when the
+    // filter already shows only one status, e.g. "Completed" alone).
+    const aCompleted = a.status === 'completed' ? 1 : 0;
+    const bCompleted = b.status === 'completed' ? 1 : 0;
+    return aCompleted - bCompleted;
   });
 
   // Group matches by round for nice structural view
@@ -140,13 +147,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       <div className="bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-800 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h2 className="text-base font-bold text-white flex flex-wrap items-center gap-2">
-            <span>Match Schedule & Matchmaker</span>
+            <span>Schedule</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono">
               {session.matches.length} Total Matches
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Round-robin rotation ensures balanced court time and varied partner pairings across all rounds.
+            Balanced rotation across all rounds.
           </p>
         </div>
 

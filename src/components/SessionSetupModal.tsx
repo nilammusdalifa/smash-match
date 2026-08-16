@@ -112,7 +112,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
             </div>
             <div className="min-w-0">
               <h3 className="text-sm sm:text-base font-bold text-white truncate">Create New Tournament Session</h3>
-              <p className="text-xs text-slate-400 hidden sm:block">Configure court capacity, players pool, and tournament rules</p>
+              <p className="text-xs text-slate-400 hidden sm:block">Set up courts, players, and rules</p>
             </div>
           </div>
 
@@ -169,7 +169,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
               ))}
             </div>
             <p className="text-[11px] text-slate-400">
-              Set to 1 Court for 8-player rotation. Scalable up to multiple courts when expanding events!
+              Use 1 court for a single rotation, or more for bigger groups.
             </p>
           </div>
 
@@ -193,7 +193,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
                   {matchmakingType === 'rotating_doubles' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Everyone rotates pairs every round so all 8 players partner with each other fairly.
+                  Partners rotate every round for fair variety.
                 </p>
               </button>
 
@@ -211,7 +211,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
                   {matchmakingType === 'fixed_doubles' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Fixed 2-person doubles teams playing a round-robin schedule against all other pairs.
+                  Fixed teams play every other team once.
                 </p>
               </button>
             </div>

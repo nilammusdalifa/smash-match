@@ -132,58 +132,6 @@ export function createNewSession(
 }
 
 /**
- * Create seed session with some played matches to make the initial experience rich and interactive
- */
-export function createDefaultSeedSession(): TournamentSession {
-  const session = createNewSession('Champions Lap 5 — Minggu, 16 Agustus 2026 (15:00-18:00)', DEFAULT_PLAYERS, 1, DEFAULT_RULES, 'rotating_doubles');
-  session.date = '2026-08-16';
-
-  // Pre-fill first match as completed with a realistic score so user immediately sees stats
-  if (session.matches.length > 0) {
-    const m1 = session.matches[0];
-    m1.status = 'completed';
-    m1.startTime = Date.now() - 18 * 60 * 1000;
-    m1.endTime = Date.now() - 2 * 60 * 1000;
-    m1.durationSeconds = 960;
-    m1.score = {
-      team1Score: 30,
-      team2Score: 25,
-      isCompleted: true,
-      winnerTeamId: 1,
-      history: [
-        { team1: 30, team2: 25, scoredByTeam: 1, timestamp: Date.now() - 120000 }
-      ]
-    };
-  }
-
-  // Set second match as currently active in Court 1
-  if (session.matches.length > 1) {
-    const m2 = session.matches[1];
-    m2.status = 'in_progress';
-    m2.startTime = Date.now() - 5 * 60 * 1000;
-    m2.score = {
-      team1Score: 16,
-      team2Score: 12,
-      isCompleted: false,
-      history: [
-        { team1: 16, team2: 12, scoredByTeam: 1, timestamp: Date.now() - 30000 }
-      ]
-    };
-    if (session.courts[0]) {
-      session.courts[0].currentMatchId = m2.id;
-    }
-  }
-
-  // Set third match as next on deck
-  if (session.matches.length > 2 && session.courts[0]) {
-    session.courts[0].nextMatchId = session.matches[2].id;
-  }
-
-  saveSession(session);
-  return session;
-}
-
-/**
  * Load all saved sessions from localStorage
  */
 export function getAllSessions(): TournamentSession[] {

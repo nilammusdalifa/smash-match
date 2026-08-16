@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Player, TournamentSession } from '../types/badminton';
 import { computePlayerStats } from '../utils/ranking';
 import {
@@ -8,21 +8,33 @@ import {
   HeartHandshake,
   Swords,
   Activity,
-  Award
+  Award,
+  Edit3
 } from 'lucide-react';
 
 interface PlayerProfileModalProps {
   player: Player | null;
   session: TournamentSession;
   onClose: () => void;
+  onUpdatePlayerTier?: (playerId: string, tier: 'A' | 'B' | 'C') => void;
+  readOnly?: boolean;
 }
 
 export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
   player,
   session,
   onClose,
+  onUpdatePlayerTier,
+  readOnly = false,
 }) => {
+  const [editingTier, setEditingTier] = useState<boolean>(false);
+
   if (!player) return null;
+
+  const handlePickTier = (tier: 'A' | 'B' | 'C') => {
+    onUpdatePlayerTier?.(player.id, tier);
+    setEditingTier(false);
+  };
 
   const stats = computePlayerStats(session.players, session.matches);
   const playerStat = stats.find((s) => s.player.id === player.id);
@@ -55,9 +67,42 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400">
-                Tier {player.skillLevel || 'A'}
-              </p>
+              {editingTier ? (
+                <div className="flex items-center gap-1 mt-0.5">
+                  {(['A', 'B', 'C'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => handlePickTier(t)}
+                      className={`w-6 h-6 rounded text-[11px] font-bold border transition-all cursor-pointer ${
+                        (player.skillLevel || 'A') === t
+                          ? 'bg-emerald-600 text-white border-emerald-500'
+                          : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setEditingTier(false)}
+                    className="text-[11px] text-slate-400 hover:text-white ml-1 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                  <span>Tier {player.skillLevel || 'A'}</span>
+                  {!readOnly && (
+                    <button
+                      onClick={() => setEditingTier(true)}
+                      title="Edit tier"
+                      className="text-slate-500 hover:text-emerald-400 cursor-pointer"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                    </button>
+                  )}
+                </p>
+              )}
             </div>
           </div>
 

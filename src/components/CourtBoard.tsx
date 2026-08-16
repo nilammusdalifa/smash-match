@@ -73,19 +73,25 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
     soundManager.announce(`Attention please. ${court.name}. Match round ${match.roundNumber}. ${t1} versus ${t2}. Please proceed to the court!`);
   };
 
+  // Most recently finished matches, newest first — quick access without digging into Schedule
+  const recentResults = [...session.matches]
+    .filter((m) => m.status === 'completed')
+    .sort((a, b) => (b.endTime || 0) - (a.endTime || 0))
+    .slice(0, 3);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Overview & Quick Status */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-900/60 p-4 sm:p-5 rounded-2xl border border-slate-800">
         <div>
           <h2 className="text-base font-bold text-white flex flex-wrap items-center gap-2">
-            <span>Active Court Management</span>
+            <span>Live Courts</span>
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
               {session.courtCount} {session.courtCount === 1 ? 'Court Active' : 'Courts Active'}
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Round-robin rotation for {session.players.length} players • Best of {session.rules.numberOfSets} set to {session.rules.pointsToWin} points (Cap: {session.rules.maxPointsCap})
+            {session.players.length} players • {session.rules.pointsToWin} points to win (cap {session.rules.maxPointsCap})
           </p>
         </div>
 
@@ -105,6 +111,39 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Recent Results — quick access to what just finished, without opening Schedule */}
+      {recentResults.length > 0 && (
+        <div className="bg-slate-900/60 p-3 sm:p-4 rounded-2xl border border-slate-800">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Recent Results</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {recentResults.map((m) => {
+              const team1Won = m.score.team1Score > m.score.team2Score;
+              return (
+                <div
+                  key={m.id}
+                  className="shrink-0 min-w-[240px] bg-slate-950/60 rounded-xl border border-slate-800/80 px-3 py-2 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`truncate ${team1Won ? 'text-emerald-400 font-semibold' : 'text-slate-400'}`}>
+                      {m.team1.player1.name} & {m.team1.player2.name}
+                    </span>
+                    <span className="font-mono font-bold text-white shrink-0">
+                      {m.score.team1Score}-{m.score.team2Score}
+                    </span>
+                    <span className={`truncate text-right ${!team1Won ? 'text-emerald-400 font-semibold' : 'text-slate-400'}`}>
+                      {m.team2.player1.name} & {m.team2.player2.name}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Courts Grid */}
       <div className={`grid gap-4 sm:gap-6 ${session.courtCount === 1 ? 'grid-cols-1 max-w-3xl mx-auto' : 'grid-cols-1 lg:grid-cols-2'}`}>
@@ -389,7 +428,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                     <div>
                       <h4 className="text-sm font-semibold text-white">Court is Ready</h4>
                       <p className="text-xs text-slate-400 max-w-xs mt-0.5">
-                        No active match in progress. Launch the next scheduled match or assign players.
+                        No match in progress yet.
                       </p>
                     </div>
                     {nextMatch && !readOnly && (

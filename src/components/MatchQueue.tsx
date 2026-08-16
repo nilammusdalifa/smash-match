@@ -14,7 +14,7 @@ import {
   Zap,
   ArrowRight
 } from 'lucide-react';
-import { generateId } from '../utils/scheduler';
+import { generateId, tierScore } from '../utils/scheduler';
 
 interface MatchQueueProps {
   session: TournamentSession;
@@ -126,19 +126,68 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     soundManager.playCourtChime();
   };
 
-  // Smart Balanced Matchmaking suggestion based on ratings
+  // Smart Balanced Matchmaking suggestion — picks 4 available players and
+  // splits them into the fairest possible teams (tier first, rating as the
+  // tiebreak), the same balancing rule the auto-generated schedule uses.
   const handleAutoBalanceCustom = () => {
-    const active = [...session.players].filter((p) => p.active);
-    if (active.length < 4) return;
-    // Shuffle and pick 4
-    const shuffled = [...active].sort(() => Math.random() - 0.5).slice(0, 4);
-    // Sort the 4 by rating: 0 (highest), 1, 2, 3 (lowest)
-    shuffled.sort((a, b) => b.currentRating - a.currentRating);
-    // Balanced pairing: Highest + Lowest vs 2nd + 3rd (0+3 vs 1+2)
-    setCustomP1(shuffled[0].id);
-    setCustomP2(shuffled[3].id);
-    setCustomP3(shuffled[1].id);
-    setCustomP4(shuffled[2].id);
+    // Players already on court right now can't be double-booked into a new match
+    const busyPlayerIds = new Set(
+      session.matches
+        .filter((m) => m.status === 'in_progress')
+        .flatMap((m) => [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id])
+    );
+    const available = session.players.filter((p) => p.active && !busyPlayerIds.has(p.id));
+    if (available.length < 4) {
+      alert('Not enough available players to auto-fill 4 (some may already be playing).');
+      return;
+    }
+
+    // Count each player's games so far (completed + in-progress), so the
+    // people who've sat out the most get first pick — same rule the
+    // auto-generated schedule uses to keep everyone's playing time even.
+    const gamesPlayed = new Map<string, number>();
+    session.matches
+      .filter((m) => m.status === 'completed' || m.status === 'in_progress')
+      .forEach((m) => {
+        [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id].forEach((id) => {
+          gamesPlayed.set(id, (gamesPlayed.get(id) || 0) + 1);
+        });
+      });
+
+    // Sort by fewest games played first, random tiebreak, then take the top 4
+    const four = [...available]
+      .sort((a, b) => {
+        const gA = gamesPlayed.get(a.id) || 0;
+        const gB = gamesPlayed.get(b.id) || 0;
+        if (gA !== gB) return gA - gB;
+        return Math.random() - 0.5;
+      })
+      .slice(0, 4);
+
+    // Try every way to split these 4 into two teams; prefer the smallest
+    // tier gap between teams, then the smallest rating gap as a tiebreak.
+    const configs = [
+      { a: [four[0], four[1]], b: [four[2], four[3]] },
+      { a: [four[0], four[2]], b: [four[1], four[3]] },
+      { a: [four[0], four[3]], b: [four[1], four[2]] },
+    ];
+    configs.sort((cA, cB) => {
+      const tierGap = (c: typeof cA) =>
+        Math.abs((tierScore(c.a[0]) + tierScore(c.a[1])) - (tierScore(c.b[0]) + tierScore(c.b[1])));
+      const gapA = tierGap(cA);
+      const gapB = tierGap(cB);
+      if (gapA !== gapB) return gapA - gapB;
+
+      const ratingGap = (c: typeof cA) =>
+        Math.abs((c.a[0].currentRating + c.a[1].currentRating) - (c.b[0].currentRating + c.b[1].currentRating));
+      return ratingGap(cA) - ratingGap(cB);
+    });
+    const best = configs[0];
+
+    setCustomP1(best.a[0].id);
+    setCustomP2(best.a[1].id);
+    setCustomP3(best.b[0].id);
+    setCustomP4(best.b[1].id);
   };
 
   return (

@@ -8,6 +8,17 @@ export function generateId(): string {
 }
 
 /**
+ * A=3, B=2, C=1 (untiered players count as a middle B) — used to keep the
+ * two teams in a match roughly matched in strength, not to gate who can
+ * play at all.
+ */
+export function tierScore(p: Player): number {
+  if (p.skillLevel === 'A') return 3;
+  if (p.skillLevel === 'C') return 1;
+  return 2;
+}
+
+/**
  * Rotating Doubles (American / Social Round Robin)
  * Designed for N players (e.g. 8 players) on C courts (e.g. 1 court).
  * Maximizes unique partner pairs and opponent variety while balancing playtime & rest.
@@ -106,15 +117,6 @@ export function generateRotatingDoublesSchedule(
   const getPairKey = (id1: string, id2: string) => [id1, id2].sort().join('-');
   const desiredRounds = Math.min(10, Math.max(5, n));
   let matchNum = 1;
-
-  // A=3, B=2, C=1 (untiered players count as a middle B) — used only to keep
-  // the two teams in a match roughly matched in strength, not to gate who
-  // can play at all.
-  const tierScore = (p: Player): number => {
-    if (p.skillLevel === 'A') return 3;
-    if (p.skillLevel === 'C') return 1;
-    return 2;
-  };
 
   for (let r = 1; r <= desiredRounds; r++) {
     // Sort players primarily by least games played, then random tiebreaker

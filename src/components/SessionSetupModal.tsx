@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { Player, GameRules, MatchmakingType, TournamentSession } from '../types/badminton';
+import { Player, GameRules, TournamentSession } from '../types/badminton';
 import { DEFAULT_RULES, DEFAULT_PLAYERS, createNewSession } from '../utils/storage';
 import { generateId } from '../utils/scheduler';
-import { 
-  X, 
-  Users, 
-  Plus, 
-  Trash2, 
-  Sparkles, 
-  Settings2, 
-  Sliders, 
-  ShieldCheck,
-  CheckCircle2
+import {
+  X,
+  Users,
+  Plus,
+  Trash2,
+  Sparkles,
+  Settings2,
+  Sliders,
+  ShieldCheck
 } from 'lucide-react';
 
 interface SessionSetupModalProps {
@@ -25,7 +24,6 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
 }) => {
   const [name, setName] = useState<string>('Friday Night Social Doubles');
   const [courtCount, setCourtCount] = useState<number>(1);
-  const [matchmakingType, setMatchmakingType] = useState<MatchmakingType>('rotating_doubles');
   const [pointsToWin, setPointsToWin] = useState<number>(30);
   const [maxPointsCap, setMaxPointsCap] = useState<number>(30);
   const [players, setPlayers] = useState<Player[]>([...DEFAULT_PLAYERS]);
@@ -93,8 +91,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
       name.trim() || 'Badminton Doubles Session',
       players,
       courtCount,
-      rules,
-      matchmakingType
+      rules
     );
 
     onSessionCreated(newSession);
@@ -171,50 +168,6 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
             <p className="text-[11px] text-slate-400">
               Use 1 court for a single rotation, or more for bigger groups.
             </p>
-          </div>
-
-          {/* Matchmaking Structure */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-              Matchmaking & Tournament Format
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setMatchmakingType('rotating_doubles')}
-                className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                  matchmakingType === 'rotating_doubles'
-                    ? 'bg-emerald-950/40 border-emerald-500/60 shadow-lg'
-                    : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-white">Rotating Doubles (Social)</span>
-                  {matchmakingType === 'rotating_doubles' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  Partners rotate every round for fair variety.
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMatchmakingType('fixed_doubles')}
-                className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                  matchmakingType === 'fixed_doubles'
-                    ? 'bg-emerald-950/40 border-emerald-500/60 shadow-lg'
-                    : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-white">Fixed Doubles Teams</span>
-                  {matchmakingType === 'fixed_doubles' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  Fixed teams play every other team once.
-                </p>
-              </button>
-            </div>
           </div>
 
           {/* Scoring Rules */}

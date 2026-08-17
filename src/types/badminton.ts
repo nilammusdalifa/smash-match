@@ -1,9 +1,5 @@
 export type MatchStatus = 'scheduled' | 'in_progress' | 'completed';
 
-export type MatchmakingType =
-  | 'rotating_doubles' // Social American round robin (partners rotate every round)
-  | 'fixed_doubles';   // Fixed 2-person teams round robin / brackets
-
 export interface Player {
   id: string;
   name: string;
@@ -77,7 +73,6 @@ export interface TournamentSession {
   courtCount: number;
   courts: Court[];
   players: Player[];
-  matchmakingType: MatchmakingType;
   rules: GameRules;
   matches: Match[];
   currentRound: number;

@@ -1,4 +1,4 @@
-import { Match, MatchmakingType, Player, GameRules, Court, TournamentSession } from '../types/badminton';
+import { Match, Player, GameRules, Court, TournamentSession } from '../types/badminton';
 
 /**
  * Generate unique ID
@@ -406,7 +406,7 @@ export function regenerateRemainingSchedule(
   const activePlayers = session.players.filter((p) => p.active);
   const lockedMatches = session.matches.filter((m) => m.status !== 'scheduled');
 
-  if (session.matchmakingType !== 'rotating_doubles' || activePlayers.length < 4) {
+  if (activePlayers.length < 4) {
     return { matches: lockedMatches, totalRounds: session.totalRounds };
   }
 
@@ -454,95 +454,6 @@ export function generateRotatingDoublesSchedule(
   const matches = generateGeneralRounds(activePlayers, courtCount, 1, desiredRounds, [], 1);
 
   return { matches, totalRounds: desiredRounds };
-}
-
-/**
- * Fixed Doubles Schedule (Teams are fixed throughout the tournament)
- */
-export function generateFixedDoublesSchedule(
-  players: Player[],
-  courtCount: number = 1,
-  _rules: GameRules
-): { matches: Match[]; totalRounds: number } {
-  const activePlayers = players.filter((p) => p.active);
-  if (activePlayers.length < 4) return { matches: [], totalRounds: 0 };
-
-  // Create fixed pairs
-  const teams: { id: string; p1: Player; p2: Player }[] = [];
-  for (let i = 0; i < activePlayers.length - 1; i += 2) {
-    teams.push({
-      id: `team_${i / 2 + 1}`,
-      p1: activePlayers[i],
-      p2: activePlayers[i + 1],
-    });
-  }
-
-  if (teams.length < 2) return { matches: [], totalRounds: 0 };
-
-  // Round Robin between teams (Berger algorithm)
-  const teamList = [...teams];
-  if (teamList.length % 2 !== 0) {
-    // dummy team for bye if odd
-    teamList.push({
-      id: 'bye',
-      p1: { id: 'bye', name: 'BYE', initialRating: 0, currentRating: 0, active: false },
-      p2: { id: 'bye', name: 'BYE', initialRating: 0, currentRating: 0, active: false },
-    });
-  }
-
-  const numTeams = teamList.length;
-  const numRounds = numTeams - 1;
-  const half = numTeams / 2;
-  const matches: Match[] = [];
-  let matchNum = 1;
-
-  for (let round = 0; round < numRounds; round++) {
-    for (let i = 0; i < half; i++) {
-      const t1 = teamList[i];
-      const t2 = teamList[numTeams - 1 - i];
-
-      if (t1.id === 'bye' || t2.id === 'bye') continue;
-
-      const courtIdx = ((matches.length % courtCount) + 1).toString();
-      matches.push({
-        id: generateId(),
-        roundNumber: round + 1,
-        matchNumber: matchNum++,
-        courtId: courtIdx,
-        courtName: `Court ${courtIdx}`,
-        team1: { player1: t1.p1, player2: t1.p2 },
-        team2: { player1: t2.p1, player2: t2.p2 },
-        score: {
-          team1Score: 0,
-          team2Score: 0,
-          isCompleted: false,
-          history: [],
-        },
-        status: 'scheduled',
-      });
-    }
-
-    // Rotate array (keep index 0 fixed)
-    const last = teamList.pop()!;
-    teamList.splice(1, 0, last);
-  }
-
-  return { matches, totalRounds: numRounds };
-}
-
-/**
- * Generate Master Schedule according to selected mode
- */
-export function generateSchedule(
-  type: MatchmakingType,
-  players: Player[],
-  courtCount: number,
-  rules: GameRules
-): { matches: Match[]; totalRounds: number } {
-  if (type === 'fixed_doubles') {
-    return generateFixedDoublesSchedule(players, courtCount, rules);
-  }
-  return generateRotatingDoublesSchedule(players, courtCount, rules);
 }
 
 /**

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { TournamentSession } from '../types/badminton';
 import { soundManager } from '../utils/audio';
 import {
@@ -375,8 +376,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
       </div>
 
-      {/* Add Player Modal */}
-      {showAddPlayer && (
+      {/* Add Player Modal — portaled to <body> because this header uses
+          backdrop-blur, and a CSS filter/backdrop-filter on any ancestor
+          creates a new containing block for position:fixed descendants,
+          which would center this modal inside the header's own small box
+          instead of the full viewport (cutting off its top edge). */}
+      {showAddPlayer && createPortal(
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -430,11 +435,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Change Courts Modal */}
-      {showChangeCourts && (
+      {/* Change Courts Modal — also portaled, see the note above. */}
+      {showChangeCourts && createPortal(
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -478,7 +484,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );

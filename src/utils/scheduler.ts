@@ -72,6 +72,23 @@ export function computePartnerCounts(matches: Match[]): Map<string, number> {
   return counts;
 }
 
+/** How many times each pair of players has already faced each other across the net. */
+export function computeOpponentCounts(matches: Match[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  const key = (id1: string, id2: string) => [id1, id2].sort().join('-');
+  matches.forEach((m) => {
+    const t1 = [m.team1.player1, m.team1.player2];
+    const t2 = [m.team2.player1, m.team2.player2];
+    t1.forEach((a) => {
+      t2.forEach((b) => {
+        const k = key(a.id, b.id);
+        counts.set(k, (counts.get(k) || 0) + 1);
+      });
+    });
+  });
+  return counts;
+}
+
 /** How many matches each player has already been part of. */
 export function computeGamesPlayed(matches: Match[]): Map<string, number> {
   const counts = new Map<string, number>();
@@ -85,6 +102,12 @@ export function computeGamesPlayed(matches: Match[]): Map<string, number> {
 
 type TeamSplit = { t1: [Player, Player]; t2: [Player, Player] };
 
+interface FairnessHistory {
+  partnerCounts?: Map<string, number>;
+  opponentCounts?: Map<string, number>;
+  carryHistory?: Map<string, CarryStats>;
+}
+
 /**
  * Lower is better. Scores a specific 2v2 split by, in order of weight:
  * 1. Tier gap bucket — 0/1 point gap is "fair" (tied); anything wider is a
@@ -94,15 +117,16 @@ type TeamSplit = { t1: [Player, Player]; t2: [Player, Player] };
  * 3. Carry/hard balance — nudges each player's carry vs. hard game count
  *    back toward parity over the session.
  * 4. Repeat partnerships (existing tiebreak).
+ * 5. Repeat opponents — lowest priority; nudges away from facing the same
+ *    pair across the net over and over, but never at the expense of 1-4.
  * Exported as a plain number (not just a comparator) so `pickBestFoursome`
  * can compare candidate foursomes against each other, not just compare
  * splits within one fixed foursome.
  */
-function scoreTeamSplit(
-  c: TeamSplit,
-  partnerCounts: Map<string, number>,
-  carryHistory: Map<string, CarryStats>
-): number {
+function scoreTeamSplit(c: TeamSplit, history: FairnessHistory): number {
+  const partnerCounts = history.partnerCounts || new Map<string, number>();
+  const opponentCounts = history.opponentCounts || new Map<string, number>();
+  const carryHistory = history.carryHistory || new Map<string, CarryStats>();
   const getPairKey = (id1: string, id2: string) => [id1, id2].sort().join('-');
 
   const tierGap = Math.abs(
@@ -131,26 +155,32 @@ function scoreTeamSplit(
     (partnerCounts.get(getPairKey(c.t1[0].id, c.t1[1].id)) || 0) +
     (partnerCounts.get(getPairKey(c.t2[0].id, c.t2[1].id)) || 0);
 
-  return tierGapBucket * 1000 + repeatCarryViolations * 100 + carryBalanceScore * 10 + partnerCost;
+  const opponentCost = c.t1.reduce(
+    (sum, a) => sum + c.t2.reduce((s, b) => s + (opponentCounts.get(getPairKey(a.id, b.id)) || 0), 0),
+    0
+  );
+
+  return (
+    tierGapBucket * 10000 +
+    repeatCarryViolations * 1000 +
+    carryBalanceScore * 100 +
+    partnerCost * 10 +
+    opponentCost
+  );
 }
 
 /** Given exactly 4 players, picks the lowest-scoring 2v2 split (see `scoreTeamSplit`). */
 export function pickBestTeamSplit(
   four: [Player, Player, Player, Player],
-  opts: { partnerCounts?: Map<string, number>; carryHistory?: Map<string, CarryStats> } = {}
+  opts: FairnessHistory = {}
 ): TeamSplit {
-  const partnerCounts = opts.partnerCounts || new Map<string, number>();
-  const carryHistory = opts.carryHistory || new Map<string, CarryStats>();
-
   const configs: TeamSplit[] = [
     { t1: [four[0], four[1]], t2: [four[2], four[3]] },
     { t1: [four[0], four[2]], t2: [four[1], four[3]] },
     { t1: [four[0], four[3]], t2: [four[1], four[2]] },
   ];
 
-  configs.sort(
-    (cA, cB) => scoreTeamSplit(cA, partnerCounts, carryHistory) - scoreTeamSplit(cB, partnerCounts, carryHistory)
-  );
+  configs.sort((cA, cB) => scoreTeamSplit(cA, opts) - scoreTeamSplit(cB, opts));
 
   return configs[0];
 }
@@ -180,8 +210,7 @@ function pickBestFoursome(
   mustPlay: Player[],
   tiedCandidates: Player[],
   slotsNeeded: number,
-  partnerCounts: Map<string, number>,
-  carryHistory: Map<string, CarryStats>
+  history: FairnessHistory
 ): { four: [Player, Player, Player, Player]; split: TeamSplit } {
   const MAX_TIED_POOL_FOR_SEARCH = 14;
   const pool = tiedCandidates.length <= MAX_TIED_POOL_FOR_SEARCH
@@ -193,8 +222,8 @@ function pickBestFoursome(
   let best: { four: [Player, Player, Player, Player]; split: TeamSplit; score: number } | null = null;
   combos.forEach((tiedSubset) => {
     const four = [...mustPlay, ...tiedSubset] as [Player, Player, Player, Player];
-    const split = pickBestTeamSplit(four, { partnerCounts, carryHistory });
-    const score = scoreTeamSplit(split, partnerCounts, carryHistory);
+    const split = pickBestTeamSplit(four, history);
+    const score = scoreTeamSplit(split, history);
     if (!best || score < best.score) {
       best = { four, split, score };
     }
@@ -207,20 +236,14 @@ function pickBestFoursome(
  * Public entry point for picking a single match out of a pool of available
  * players (Auto Fill, reshuffle-one-match) — same rule as the main
  * scheduler: whoever's played the fewest games must be included, and the
- * choice among anyone tied on games played is optimized for tier balance
- * and carry fairness rather than picked arbitrarily.
+ * choice among anyone tied on games played is optimized for tier balance,
+ * carry fairness, and partner/opponent variety rather than picked arbitrarily.
  */
 export function pickBestAvailableFoursome(
   available: Player[],
-  opts: {
-    gamesPlayed?: Map<string, number>;
-    partnerCounts?: Map<string, number>;
-    carryHistory?: Map<string, CarryStats>;
-  } = {}
+  opts: FairnessHistory & { gamesPlayed?: Map<string, number> } = {}
 ): { four: [Player, Player, Player, Player]; split: TeamSplit } {
   const gamesPlayed = opts.gamesPlayed || new Map<string, number>();
-  const partnerCounts = opts.partnerCounts || new Map<string, number>();
-  const carryHistory = opts.carryHistory || new Map<string, CarryStats>();
 
   const pool = [...available].sort((a, b) => {
     const gA = gamesPlayed.get(a.id) || 0;
@@ -235,7 +258,7 @@ export function pickBestAvailableFoursome(
   const tiedCandidates = pool.filter((p) => (gamesPlayed.get(p.id) || 0) === cutoffGames);
   const slotsNeeded = 4 - mustPlay.length;
 
-  return pickBestFoursome(mustPlay, tiedCandidates, slotsNeeded, partnerCounts, carryHistory);
+  return pickBestFoursome(mustPlay, tiedCandidates, slotsNeeded, opts);
 }
 
 /**
@@ -257,8 +280,10 @@ function generateGeneralRounds(
   const n = activePlayers.length;
   const matches: Match[] = [];
   const partnerCounts = computePartnerCounts(historyMatches);
+  const opponentCounts = computeOpponentCounts(historyMatches);
   const gamesPlayed = computeGamesPlayed(historyMatches);
   const carryHistory = computeCarryHistory(historyMatches);
+  const history: FairnessHistory = { partnerCounts, opponentCounts, carryHistory };
   activePlayers.forEach((p) => {
     if (!gamesPlayed.has(p.id)) gamesPlayed.set(p.id, 0);
   });
@@ -305,8 +330,7 @@ function generateGeneralRounds(
         mustPlayForThisMatch,
         remainingTied,
         slotsNeeded,
-        partnerCounts,
-        carryHistory
+        history
       );
       const chosenTiedIds = new Set(
         four.filter((p) => !mustPlayForThisMatch.some((mp) => mp.id === p.id)).map((p) => p.id)
@@ -318,6 +342,12 @@ function generateGeneralRounds(
       const k2 = getPairKey(best.t2[0].id, best.t2[1].id);
       partnerCounts.set(k1, (partnerCounts.get(k1) || 0) + 1);
       partnerCounts.set(k2, (partnerCounts.get(k2) || 0) + 1);
+      best.t1.forEach((a) => {
+        best.t2.forEach((b) => {
+          const ok = getPairKey(a.id, b.id);
+          opponentCounts.set(ok, (opponentCounts.get(ok) || 0) + 1);
+        });
+      });
 
       [best.t1, best.t2].forEach((team) => {
         const carry = isCarryPairing(team[0], team[1]);

@@ -21,6 +21,7 @@ import {
   pickBestAvailableFoursome,
   computeCarryHistory,
   computePartnerCounts,
+  computeOpponentCounts,
   computeGamesPlayed,
 } from '../utils/scheduler';
 
@@ -169,8 +170,14 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     const gamesPlayed = computeGamesPlayed(historyMatches);
     const carryHistory = computeCarryHistory(historyMatches);
     const partnerCounts = computePartnerCounts(historyMatches);
+    const opponentCounts = computeOpponentCounts(historyMatches);
 
-    const { split: best } = pickBestAvailableFoursome(available, { gamesPlayed, partnerCounts, carryHistory });
+    const { split: best } = pickBestAvailableFoursome(available, {
+      gamesPlayed,
+      partnerCounts,
+      opponentCounts,
+      carryHistory,
+    });
 
     setCustomP1(best.t1[0].id);
     setCustomP2(best.t1[1].id);
@@ -205,8 +212,14 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     const gamesPlayed = computeGamesPlayed(historyMatches);
     const carryHistory = computeCarryHistory(historyMatches);
     const partnerCounts = computePartnerCounts(historyMatches);
+    const opponentCounts = computeOpponentCounts(historyMatches);
 
-    const { split: best } = pickBestAvailableFoursome(available, { gamesPlayed, partnerCounts, carryHistory });
+    const { split: best } = pickBestAvailableFoursome(available, {
+      gamesPlayed,
+      partnerCounts,
+      opponentCounts,
+      carryHistory,
+    });
     setSwapP1(best.t1[0].id);
     setSwapP2(best.t1[1].id);
     setSwapP3(best.t2[0].id);

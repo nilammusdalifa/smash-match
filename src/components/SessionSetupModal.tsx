@@ -56,17 +56,24 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
   };
 
   const handleApplyBulkPlayers = () => {
-    const lines = bulkText.split(/[\n,]+/).map((l) => l.trim()).filter(Boolean);
-    if (lines.length === 0) return;
+    const tokens = bulkText.split(/[\n,]+/).map((l) => l.trim()).filter(Boolean);
+    if (tokens.length === 0) return;
 
-    const imported: Player[] = lines.map((pName) => ({
-      id: generateId(),
-      name: pName,
-      initialRating: 1200,
-      currentRating: 1200,
-      skillLevel: 'A',
-      active: true,
-    }));
+    // "Name (A)" tags a tier; a bare name still works and defaults to A.
+    const imported: Player[] = tokens.map((token) => {
+      const tierMatch = token.match(/^(.+?)\s*\(([ABCabc])\)\s*$/);
+      const name = (tierMatch ? tierMatch[1] : token).trim();
+      const skillLevel = (tierMatch ? tierMatch[2].toUpperCase() : 'A') as 'A' | 'B' | 'C';
+      const rating = skillLevel === 'A' ? 1200 : skillLevel === 'B' ? 1150 : 1100;
+      return {
+        id: generateId(),
+        name,
+        initialRating: rating,
+        currentRating: rating,
+        skillLevel,
+        active: true,
+      };
+    });
 
     setPlayers(imported);
     setShowBulkInput(false);
@@ -232,11 +239,14 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
               <div className="space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800">
                 <textarea
                   rows={4}
-                  placeholder="Paste player names separated by newlines or commas..."
+                  placeholder={'Raden (A)\nNilam (A)\nFahmi (B)\nNovi (C)'}
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
                 />
+                <p className="text-[11px] text-slate-500">
+                  One per line or comma-separated. Add a tier like "(A)" — leave it off and they default to Tier A.
+                </p>
                 <button
                   type="button"
                   onClick={handleApplyBulkPlayers}

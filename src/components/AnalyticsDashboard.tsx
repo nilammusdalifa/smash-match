@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { TournamentSession } from '../types/badminton';
 import { computePlayerStats } from '../utils/ranking';
-import { 
-  BarChart3, 
-  Activity, 
-  Flame, 
-  Clock, 
-  Award, 
-  Copy, 
-  Check, 
-  Share2, 
+import {
+  BarChart3,
+  Activity,
+  Flame,
+  Clock,
+  Award,
   Zap,
-  PieChart
+  PieChart,
+  Scale
 } from 'lucide-react';
 
 interface AnalyticsDashboardProps {
@@ -19,11 +17,11 @@ interface AnalyticsDashboardProps {
 }
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ session }) => {
-  const [copied, setCopied] = useState<boolean>(false);
-
   const completedMatches = session.matches.filter((m) => m.status === 'completed');
   const totalMatches = session.matches.length;
   const stats = computePlayerStats(session.players, session.matches);
+  const maxGamesPlayed = Math.max(1, ...stats.map((st) => st.matchesPlayed));
+  const gamesPlayedFairness = [...stats].sort((a, b) => b.matchesPlayed - a.matchesPlayed);
 
   // Points analytics
   let totalPointsScored = 0;
@@ -41,49 +39,17 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ session 
   const avgPointsPerMatch = completedMatches.length > 0 ? Math.round(totalPointsScored / completedMatches.length) : 0;
   const mediumMarginCount = Math.max(0, completedMatches.length - closeMatchesCount - blowoutMatchesCount);
 
-  // Generate WhatsApp / Telegram shareable tournament summary text
-  const generateShareText = () => {
-    let txt = `🏸 *${session.name}* (${session.date})\n`;
-    txt += `━━━━━━━━━━━━━━━━━━━━\n`;
-    txt += `🏆 *CURRENT STANDINGS & LEADERBOARD*\n`;
-    stats.forEach((st, idx) => {
-      const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-      txt += `${medal} *${st.player.name}* | ${st.matchesWon}W-${st.matchesLost}L | Diff: ${st.pointDiff > 0 ? '+' : ''}${st.pointDiff}\n`;
-    });
-    txt += `━━━━━━━━━━━━━━━━━━━━\n`;
-    txt += `📊 Completed: ${completedMatches.length}/${totalMatches} matches (${totalPointsScored} pts scored)\n`;
-    txt += `🏸 Managed via SmashMatch Doubles Hub`;
-    return txt;
-  };
-
-  const handleCopySummary = () => {
-    navigator.clipboard.writeText(generateShareText());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span>Stats</span>
-          </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Match stats and a shareable results summary.
-          </p>
-        </div>
-
-        <button
-          id="btn-copy-summary"
-          onClick={handleCopySummary}
-          className="w-full sm:w-auto justify-center px-4 py-2.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
-        >
-          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          <span>{copied ? 'Copied to Clipboard!' : 'Copy Summary for Group Chat'}</span>
-        </button>
+      <div className="bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-800">
+        <h2 className="text-base font-bold text-white flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span>Stats</span>
+        </h2>
+        <p className="text-xs text-slate-400 mt-1">
+          Match stats for this session.
+        </p>
       </div>
 
       {/* KPI Stats Grid */}
@@ -194,24 +160,29 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ session 
           </div>
         </div>
 
-        {/* Live Text Recap Preview */}
+        {/* Games Played Fairness */}
         <div className="bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Share2 className="w-4 h-4 text-emerald-400" />
-              <span>Group Chat Report Preview</span>
-            </h3>
-            <button
-              onClick={handleCopySummary}
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold"
-            >
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Scale className="w-4 h-4 text-emerald-400" />
+            <span>Games Played Fairness</span>
+          </h3>
 
-          <pre className="bg-slate-950 p-4 rounded-xl text-slate-300 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap leading-relaxed border border-slate-800 max-h-52">
-            {generateShareText()}
-          </pre>
+          <div className="space-y-2.5 max-h-52 overflow-y-auto pr-1">
+            {gamesPlayedFairness.map((st) => (
+              <div key={st.player.id}>
+                <div className="flex justify-between text-xs text-slate-300 mb-1">
+                  <span className="truncate">{st.player.name}</span>
+                  <span className="font-mono font-bold text-white shrink-0 ml-2">{st.matchesPlayed}</span>
+                </div>
+                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-emerald-500 h-full rounded-full"
+                    style={{ width: `${(st.matchesPlayed / maxGamesPlayed) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { TournamentSession, PlayerStats, Player } from '../types/badminton';
 import { computePlayerStats } from '../utils/ranking';
+import { ShareRankingsModal } from './ShareRankingsModal';
 import {
   Trophy,
   Flame,
   ArrowUpDown,
   Award,
   HeartHandshake,
-  ChevronRight
+  ChevronRight,
+  Share2
 } from 'lucide-react';
 
 interface LeaderboardProps {
@@ -18,8 +20,10 @@ interface LeaderboardProps {
 export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlayer }) => {
   const [sortBy, setSortBy] = useState<'rank' | 'winRate' | 'pointDiff' | 'wins'>('rank');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
+  const [showShare, setShowShare] = useState<boolean>(false);
 
   const stats = computePlayerStats(session.players, session.matches);
+  const top5ByRank = [...stats].sort((a, b) => a.rank - b.rank).slice(0, 5);
 
   // Sorting (rank already factors in rating as an internal tiebreaker — see ranking.ts)
   const sortedStats = [...stats].sort((a, b) => {
@@ -62,22 +66,42 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
           </p>
         </div>
 
-        {/* Top Performer Ribbon */}
-        {sortedStats.length > 0 && sortedStats[0].matchesPlayed > 0 && (
-          <div className="bg-gradient-to-r from-amber-500/10 to-emerald-500/10 border border-amber-500/30 px-4 py-2.5 rounded-xl flex items-center gap-3">
-            <Award className="w-5 h-5 text-amber-400 shrink-0" />
-            <div className="text-xs">
-              <span className="text-amber-400 font-bold uppercase tracking-wider block text-[11px]">
-                Tournament Leader
-              </span>
-              <span className="font-bold text-white">{sortedStats[0].player.name}</span>
-              <span className="text-slate-400 ml-1.5 font-mono">
-                ({sortedStats[0].matchesWon}W - {sortedStats[0].matchesLost}L • {sortedStats[0].winRate}%)
-              </span>
+        <div className="flex items-center gap-3">
+          {/* Top Performer Ribbon */}
+          {sortedStats.length > 0 && sortedStats[0].matchesPlayed > 0 && (
+            <div className="bg-gradient-to-r from-amber-500/10 to-emerald-500/10 border border-amber-500/30 px-4 py-2.5 rounded-xl flex items-center gap-3">
+              <Award className="w-5 h-5 text-amber-400 shrink-0" />
+              <div className="text-xs">
+                <span className="text-amber-400 font-bold uppercase tracking-wider block text-[11px]">
+                  Tournament Leader
+                </span>
+                <span className="font-bold text-white">{sortedStats[0].player.name}</span>
+                <span className="text-slate-400 ml-1.5 font-mono">
+                  ({sortedStats[0].matchesWon}W - {sortedStats[0].matchesLost}L • {sortedStats[0].winRate}%)
+                </span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {top5ByRank.length > 0 && (
+            <button
+              onClick={() => setShowShare(true)}
+              title="Share Top 5 as an image"
+              className="p-2.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-all shrink-0 cursor-pointer"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
+
+      {showShare && (
+        <ShareRankingsModal
+          sessionName={session.name}
+          topStats={top5ByRank}
+          onClose={() => setShowShare(false)}
+        />
+      )}
 
       {/* Mobile: Player Rank Cards */}
       <div className="space-y-2.5 sm:hidden">

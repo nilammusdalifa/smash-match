@@ -387,14 +387,17 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                  {/* Match Info & Round */}
-                  <div className="flex items-center space-x-3 shrink-0">
+                  {/* Match Info & Round — fixed width so the Resting list's
+                      length doesn't steal variable space from the team
+                      boxes below, which would make them a different width
+                      on every row. */}
+                  <div className="flex items-center space-x-3 shrink-0 sm:w-56">
                     <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex flex-col items-center justify-center text-center shrink-0">
                       <span className="text-[10px] font-bold text-slate-400 uppercase">R{m.roundNumber}</span>
                       <span className="text-xs font-black text-white">#{m.matchNumber}</span>
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-slate-300">
                           {m.courtName || 'Court 1'}
@@ -412,7 +415,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                       </div>
 
                       {m.restingPlayerIds && m.restingPlayerIds.length > 0 && (
-                        <div className="text-[11px] text-slate-400 mt-0.5 truncate max-w-xs">
+                        <div className="text-[11px] text-slate-400 mt-0.5 truncate">
                           Resting: {session.players.filter((p) => m.restingPlayerIds?.includes(p.id)).map((p) => p.name).join(', ')}
                         </div>
                       )}

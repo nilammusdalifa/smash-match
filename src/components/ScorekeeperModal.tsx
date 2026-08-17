@@ -158,17 +158,17 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
         <div className="bg-slate-950 px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-800 flex items-center justify-between gap-2">
           <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shrink-0">
-              {match.courtName || 'C1'}
+              {match.courtId || '1'}
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <h3 className="text-sm sm:text-base font-bold text-white">Umpire Scoreboard</h3>
-                <span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono whitespace-nowrap">
+                <h3 className="text-sm sm:text-base font-bold text-white truncate">Umpire Scoreboard</h3>
+                <span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono whitespace-nowrap shrink-0">
                   R{match.roundNumber} • #{match.matchNumber}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
-                {targetScore} points to win (cap {maxCap})
+              <p className="text-xs text-slate-400 hidden sm:block truncate">
+                {match.courtName || 'Court 1'} • {targetScore} points to win (cap {maxCap})
               </p>
             </div>
           </div>

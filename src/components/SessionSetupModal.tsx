@@ -185,7 +185,14 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
               </label>
               <select
                 value={pointsToWin}
-                onChange={(e) => setPointsToWin(Number(e.target.value))}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  // Keep "No deuce" in effect across a target change (cap was
+                  // tracking the old target) — a deliberately-chosen 30-cap
+                  // stays fixed at 30 regardless of target.
+                  setMaxPointsCap((prevCap) => (prevCap === pointsToWin ? next : prevCap));
+                  setPointsToWin(next);
+                }}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
               >
                 <option value={30}>30 Points (Single Game Sudden Death)</option>
@@ -203,8 +210,8 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
                 onChange={(e) => setMaxPointsCap(Number(e.target.value))}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
               >
-                <option value={30}>30 Points Cap</option>
-                <option value={21}>No deuce (First to target)</option>
+                <option value={pointsToWin}>No deuce (First to target)</option>
+                <option value={30}>Deuce, cap at 30</option>
               </select>
             </div>
           </div>

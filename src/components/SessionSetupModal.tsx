@@ -26,7 +26,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
   const [courtCount, setCourtCount] = useState<number>(1);
   const [pointsToWin, setPointsToWin] = useState<number>(30);
   const [maxPointsCap, setMaxPointsCap] = useState<number>(30);
-  const [players, setPlayers] = useState<Player[]>([...DEFAULT_PLAYERS]);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [newPlayerName, setNewPlayerName] = useState<string>('');
   const [newPlayerSkill, setNewPlayerSkill] = useState<'A' | 'B' | 'C'>('A');
   const [bulkText, setBulkText] = useState<string>('');
@@ -295,6 +295,11 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
 
             {/* Players Pill List */}
             <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+              {players.length === 0 && (
+                <p className="text-xs text-slate-500 py-1">
+                  No players yet — add one above, paste a list, or load the sample roster.
+                </p>
+              )}
               {players.map((p, idx) => (
                 <div
                   key={p.id}

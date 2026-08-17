@@ -1,20 +1,29 @@
 import React, { useState } from 'react';
 import { TournamentSession, Match, Player } from '../types/badminton';
 import { soundManager } from '../utils/audio';
-import { 
-  CheckCircle2, 
-  Play, 
-  Edit3, 
-  Plus, 
-  SlidersHorizontal, 
-  Clock, 
+import {
+  CheckCircle2,
+  Play,
+  Edit3,
+  Plus,
+  SlidersHorizontal,
+  Clock,
   Sparkles,
   Users,
   Search,
   Zap,
-  ArrowRight
+  ArrowRight,
+  Shuffle,
+  Trash2,
 } from 'lucide-react';
-import { generateId, tierScore } from '../utils/scheduler';
+import {
+  generateId,
+  tierScore,
+  pickBestTeamSplit,
+  computeCarryHistory,
+  computePartnerCounts,
+  computeGamesPlayed,
+} from '../utils/scheduler';
 
 interface MatchQueueProps {
   session: TournamentSession;
@@ -22,6 +31,8 @@ interface MatchQueueProps {
   onStartMatch: (matchId: string, courtId: string) => void;
   onOpenScorekeeper: (match: Match) => void;
   onAddCustomMatch: (match: Match) => void;
+  onDeleteMatch: (matchId: string) => void;
+  onUpdateMatchPlayers: (matchId: string, team1: [string, string], team2: [string, string]) => void;
   readOnly?: boolean;
 }
 
@@ -31,6 +42,8 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   onStartMatch,
   onOpenScorekeeper,
   onAddCustomMatch,
+  onDeleteMatch,
+  onUpdateMatchPlayers,
   readOnly = false,
 }) => {
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
@@ -49,6 +62,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   const [customP3, setCustomP3] = useState<string>(session.players[2]?.id || '');
   const [customP4, setCustomP4] = useState<string>(session.players[3]?.id || '');
   const [customCourt, setCustomCourt] = useState<string>('1');
+
+  // Swap/reshuffle editor for an already-scheduled (not yet played) match
+  const [editingSwapMatchId, setEditingSwapMatchId] = useState<string | null>(null);
+  const [swapP1, setSwapP1] = useState<string>('');
+  const [swapP2, setSwapP2] = useState<string>('');
+  const [swapP3, setSwapP3] = useState<string>('');
+  const [swapP4, setSwapP4] = useState<string>('');
 
   // Filter matches
   const filteredMatches = session.matches.filter((m) => {
@@ -142,19 +162,15 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       return;
     }
 
-    // Count each player's games so far (completed + in-progress), so the
-    // people who've sat out the most get first pick — same rule the
-    // auto-generated schedule uses to keep everyone's playing time even.
-    const gamesPlayed = new Map<string, number>();
-    session.matches
-      .filter((m) => m.status === 'completed' || m.status === 'in_progress')
-      .forEach((m) => {
-        [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id].forEach((id) => {
-          gamesPlayed.set(id, (gamesPlayed.get(id) || 0) + 1);
-        });
-      });
+    // Real match history (completed + in-progress) drives fairness: fewest
+    // games played gets first pick, and the team split avoids repeat carry
+    // roles / repeat partners / tier stacking — same rules the
+    // auto-generated schedule uses.
+    const historyMatches = session.matches.filter((m) => m.status !== 'scheduled');
+    const gamesPlayed = computeGamesPlayed(historyMatches);
+    const carryHistory = computeCarryHistory(historyMatches);
+    const partnerCounts = computePartnerCounts(historyMatches);
 
-    // Sort by fewest games played first, random tiebreak, then take the top 4
     const four = [...available]
       .sort((a, b) => {
         const gA = gamesPlayed.get(a.id) || 0;
@@ -162,32 +178,75 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
         if (gA !== gB) return gA - gB;
         return Math.random() - 0.5;
       })
-      .slice(0, 4);
+      .slice(0, 4) as [Player, Player, Player, Player];
 
-    // Try every way to split these 4 into two teams; prefer the smallest
-    // tier gap between teams, then the smallest rating gap as a tiebreak.
-    const configs = [
-      { a: [four[0], four[1]], b: [four[2], four[3]] },
-      { a: [four[0], four[2]], b: [four[1], four[3]] },
-      { a: [four[0], four[3]], b: [four[1], four[2]] },
-    ];
-    configs.sort((cA, cB) => {
-      const tierGap = (c: typeof cA) =>
-        Math.abs((tierScore(c.a[0]) + tierScore(c.a[1])) - (tierScore(c.b[0]) + tierScore(c.b[1])));
-      const gapA = tierGap(cA);
-      const gapB = tierGap(cB);
-      if (gapA !== gapB) return gapA - gapB;
+    const best = pickBestTeamSplit(four, { partnerCounts, carryHistory });
 
-      const ratingGap = (c: typeof cA) =>
-        Math.abs((c.a[0].currentRating + c.a[1].currentRating) - (c.b[0].currentRating + c.b[1].currentRating));
-      return ratingGap(cA) - ratingGap(cB);
-    });
-    const best = configs[0];
+    setCustomP1(best.t1[0].id);
+    setCustomP2(best.t1[1].id);
+    setCustomP3(best.t2[0].id);
+    setCustomP4(best.t2[1].id);
+  };
 
-    setCustomP1(best.a[0].id);
-    setCustomP2(best.a[1].id);
-    setCustomP3(best.b[0].id);
-    setCustomP4(best.b[1].id);
+  const handleOpenSwapEditor = (m: Match) => {
+    setEditingSwapMatchId(m.id);
+    setSwapP1(m.team1.player1.id);
+    setSwapP2(m.team1.player2.id);
+    setSwapP3(m.team2.player1.id);
+    setSwapP4(m.team2.player2.id);
+  };
+
+  const handleReshuffleMatch = (m: Match) => {
+    // Anyone busy on another live court can't be pulled into this match —
+    // but this match's own 4 current players are fair game again since
+    // we're about to replace this exact match.
+    const busyElsewhere = new Set(
+      session.matches
+        .filter((other) => other.id !== m.id && other.status === 'in_progress')
+        .flatMap((o) => [o.team1.player1.id, o.team1.player2.id, o.team2.player1.id, o.team2.player2.id])
+    );
+    const available = session.players.filter((p) => p.active && !busyElsewhere.has(p.id));
+    if (available.length < 4) {
+      alert('Not enough available players to reshuffle (some may already be playing elsewhere).');
+      return;
+    }
+
+    const historyMatches = session.matches.filter((o) => o.id !== m.id && o.status !== 'scheduled');
+    const gamesPlayed = computeGamesPlayed(historyMatches);
+    const carryHistory = computeCarryHistory(historyMatches);
+    const partnerCounts = computePartnerCounts(historyMatches);
+
+    const four = [...available]
+      .sort((a, b) => {
+        const gA = gamesPlayed.get(a.id) || 0;
+        const gB = gamesPlayed.get(b.id) || 0;
+        if (gA !== gB) return gA - gB;
+        return Math.random() - 0.5;
+      })
+      .slice(0, 4) as [Player, Player, Player, Player];
+
+    const best = pickBestTeamSplit(four, { partnerCounts, carryHistory });
+    setSwapP1(best.t1[0].id);
+    setSwapP2(best.t1[1].id);
+    setSwapP3(best.t2[0].id);
+    setSwapP4(best.t2[1].id);
+  };
+
+  const handleSaveSwap = () => {
+    if (!editingSwapMatchId) return;
+    const ids = new Set([swapP1, swapP2, swapP3, swapP4]);
+    if (ids.size < 4) {
+      alert('All 4 players must be distinct individuals!');
+      return;
+    }
+    onUpdateMatchPlayers(editingSwapMatchId, [swapP1, swapP2], [swapP3, swapP4]);
+    setEditingSwapMatchId(null);
+  };
+
+  const handleDeleteMatchClick = (m: Match) => {
+    if (confirm('Remove this match? The 4 players will just sit out this round.')) {
+      onDeleteMatch(m.id);
+    }
   };
 
   return (
@@ -296,10 +355,30 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
         ) : (
           filteredMatches.map((m) => {
             const isEditing = editingMatchId === m.id;
+            const isSwapEditing = editingSwapMatchId === m.id;
             const isCompleted = m.status === 'completed';
             const isLive = m.status === 'in_progress';
+            const isScheduled = m.status === 'scheduled';
             const team1Won = isCompleted && m.score.team1Score > m.score.team2Score;
             const team2Won = isCompleted && m.score.team2Score > m.score.team1Score;
+
+            // Players eligible to fill a slot in this match's swap editor:
+            // any active player not currently busy in a DIFFERENT in-progress
+            // match (the 4 already in this match stay selectable).
+            const swapOptions = isSwapEditing
+              ? session.players.filter((p) => {
+                  if (!p.active) return false;
+                  const isCurrentlyInThisMatch = [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id].includes(p.id);
+                  if (isCurrentlyInThisMatch) return true;
+                  const busyElsewhere = session.matches.some(
+                    (o) =>
+                      o.id !== m.id &&
+                      o.status === 'in_progress' &&
+                      [o.team1.player1.id, o.team1.player2.id, o.team2.player1.id, o.team2.player2.id].includes(p.id)
+                  );
+                  return !busyElsewhere;
+                })
+              : [];
 
             return (
               <div
@@ -347,6 +426,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                   </div>
 
                   {/* Teams and Scores */}
+                  {!isSwapEditing && (
                   <div className="flex-1 flex flex-col sm:grid sm:grid-cols-11 gap-2 items-center text-center">
                     {/* Team 1 */}
                     <div className={`w-full sm:col-span-4 p-2 rounded-xl border ${team1Won ? 'bg-emerald-950/30 border-emerald-500/40 font-bold' : 'bg-slate-950/40 border-slate-800/60'}`}>
@@ -401,11 +481,82 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                       </div>
                     </div>
                   </div>
+                  )}
+
+                  {/* Swap Editor — replaces the team display while editing a scheduled match's players */}
+                  {isSwapEditing && (
+                    <div className="flex-1 grid grid-cols-2 gap-3 w-full">
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Team A</span>
+                        <select
+                          value={swapP1}
+                          onChange={(e) => setSwapP1(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200"
+                        >
+                          {swapOptions.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={swapP2}
+                          onChange={(e) => setSwapP2(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200"
+                        >
+                          {swapOptions.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400">Team B</span>
+                        <select
+                          value={swapP3}
+                          onChange={(e) => setSwapP3(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200"
+                        >
+                          {swapOptions.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={swapP4}
+                          onChange={(e) => setSwapP4(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200"
+                        >
+                          {swapOptions.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Actions */}
                   {!readOnly && (
                   <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 w-full sm:w-auto">
-                    {isEditing ? (
+                    {isSwapEditing ? (
+                      <>
+                        <button
+                          onClick={() => handleReshuffleMatch(m)}
+                          title="Auto-suggest a fresh balanced matchup"
+                          className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs border border-emerald-500/30 cursor-pointer"
+                        >
+                          <Shuffle className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={handleSaveSwap}
+                          className="flex-1 sm:flex-none px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold cursor-pointer"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingSwapMatchId(null)}
+                          className="flex-1 sm:flex-none px-2.5 py-2 rounded-lg bg-slate-800 text-slate-400 text-xs hover:text-white cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : isEditing ? (
                       <>
                         <button
                           onClick={() => handleSaveQuickScore(m.id)}
@@ -422,6 +573,26 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                       </>
                     ) : (
                       <>
+                        {/* Swap / Delete — only meaningful before a match has started */}
+                        {isScheduled && (
+                          <>
+                            <button
+                              onClick={() => handleOpenSwapEditor(m)}
+                              title="Swap players in this match"
+                              className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs border border-slate-700 cursor-pointer"
+                            >
+                              <Shuffle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMatchClick(m)}
+                              title="Delete this match"
+                              className="p-2.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 text-xs border border-slate-700 hover:border-rose-500/40 cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+
                         {/* Quick Edit Score Button */}
                         <button
                           onClick={() => {

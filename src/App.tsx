@@ -15,6 +15,7 @@ import {
 } from './utils/storage';
 import { auth, ensureAnonymousAuth } from './utils/firebase';
 import { calculateDoublesEloChange } from './utils/ranking';
+import { generateId, regenerateRemainingSchedule } from './utils/scheduler';
 import { soundManager } from './utils/audio';
 import { Navbar } from './components/Navbar';
 import { CourtBoard } from './components/CourtBoard';
@@ -293,17 +294,87 @@ export default function App() {
     persistSession(nextSession);
   };
 
-  // Edit a player's skill tier (cosmetic label only — doesn't touch rating,
-  // which isn't shown anywhere and drives matchmaking balance separately)
+  // Edit a player's skill tier. Also re-balances every not-yet-played match
+  // against the new tier — matches already completed or in progress are left
+  // alone, since the game already happened under the old assumption.
   const handleUpdatePlayerTier = (playerId: string, tier: 'A' | 'B' | 'C') => {
     if (!session) return;
     const updatedPlayers = session.players.map((p) =>
       p.id === playerId ? { ...p, skillLevel: tier } : p
     );
-    const nextSession: TournamentSession = { ...session, players: updatedPlayers };
+    const sessionWithTier = { ...session, players: updatedPlayers };
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithTier, session.courtCount);
+    const nextSession: TournamentSession = { ...sessionWithTier, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
     setSelectedProfilePlayer((prev) => (prev && prev.id === playerId ? { ...prev, skillLevel: tier } : prev));
+  };
+
+  // Add a new player mid-session and re-balance every not-yet-played match
+  // so they get woven into the remaining rounds fairly.
+  const handleAddPlayer = (name: string, tier: 'A' | 'B' | 'C') => {
+    if (!session) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const startingRating = tier === 'A' ? 1200 : tier === 'B' ? 1150 : 1100;
+    const newPlayer: Player = {
+      id: generateId(),
+      name: trimmed,
+      initialRating: startingRating,
+      currentRating: startingRating,
+      skillLevel: tier,
+      active: true,
+    };
+    const sessionWithPlayer = { ...session, players: [...session.players, newPlayer] };
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPlayer, session.courtCount);
+    const nextSession: TournamentSession = { ...sessionWithPlayer, matches, totalRounds };
+    setSession(nextSession);
+    persistSession(nextSession);
+  };
+
+  // Remove a not-yet-played match. The 4 freed-up players simply sit out
+  // that round — nothing else in the schedule shifts.
+  const handleDeleteMatch = (matchId: string) => {
+    if (!session) return;
+    const match = session.matches.find((m) => m.id === matchId);
+    if (!match || match.status !== 'scheduled') return;
+    const nextSession: TournamentSession = {
+      ...session,
+      matches: session.matches.filter((m) => m.id !== matchId),
+    };
+    setSession(nextSession);
+    persistSession(nextSession);
+  };
+
+  // Replace the 4 players in a not-yet-played match — used for both a
+  // single-slot swap (3 ids unchanged, 1 new) and a full reshuffle (4 new
+  // ids), decided by the caller.
+  const handleUpdateMatchPlayers = (
+    matchId: string,
+    team1: [string, string],
+    team2: [string, string]
+  ) => {
+    if (!session) return;
+    const matchIdx = session.matches.findIndex((m) => m.id === matchId);
+    if (matchIdx < 0) return;
+    const match = session.matches[matchIdx];
+    if (match.status !== 'scheduled') return;
+
+    const byId = new Map<string, Player>(session.players.map((p) => [p.id, p]));
+    const p1 = byId.get(team1[0]);
+    const p2 = byId.get(team1[1]);
+    const p3 = byId.get(team2[0]);
+    const p4 = byId.get(team2[1]);
+    if (!p1 || !p2 || !p3 || !p4) return;
+    if (new Set([p1.id, p2.id, p3.id, p4.id]).size < 4) return;
+
+    const updated: Match = { ...match, team1: { player1: p1, player2: p2 }, team2: { player1: p3, player2: p4 } };
+    const nextSession: TournamentSession = {
+      ...session,
+      matches: session.matches.map((m, i) => (i === matchIdx ? updated : m)),
+    };
+    setSession(nextSession);
+    persistSession(nextSession);
   };
 
   // Reset Session
@@ -370,6 +441,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenNewSessionModal={() => setShowSetupModal(true)}
         onResetSession={handleResetSession}
+        onAddPlayer={handleAddPlayer}
         readOnly={isReadOnlyPlayer}
         hideSessionControls={isRemoteMode}
       />
@@ -394,6 +466,8 @@ export default function App() {
             onStartMatch={handleStartMatch}
             onOpenScorekeeper={handleOpenScorekeeper}
             onAddCustomMatch={handleAddCustomMatch}
+            onDeleteMatch={handleDeleteMatch}
+            onUpdateMatchPlayers={handleUpdateMatchPlayers}
             readOnly={isReadOnlyPlayer}
           />
         )}

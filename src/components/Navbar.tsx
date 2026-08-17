@@ -10,6 +10,7 @@ import {
   RotateCcw,
   MoreVertical,
   Users,
+  UserPlus,
   BarChart3,
   Calendar,
   Grid,
@@ -23,6 +24,7 @@ interface NavbarProps {
   setActiveTab: (tab: 'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'analytics') => void;
   onOpenNewSessionModal: () => void;
   onResetSession: () => void;
+  onAddPlayer: (name: string, tier: 'A' | 'B' | 'C') => void;
   /** Player (view-only) mode: hides everything that mutates the session. */
   readOnly?: boolean;
   /**
@@ -40,13 +42,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onOpenNewSessionModal,
   onResetSession,
+  onAddPlayer,
   readOnly = false,
   hideSessionControls = false,
 }) => {
   const [soundOn, setSoundOn] = useState<boolean>(soundManager.isSoundEnabled());
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
+  const [showAddPlayer, setShowAddPlayer] = useState<boolean>(false);
+  const [newPlayerName, setNewPlayerName] = useState<string>('');
+  const [newPlayerTier, setNewPlayerTier] = useState<'A' | 'B' | 'C'>('B');
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleConfirmAddPlayer = () => {
+    if (!newPlayerName.trim()) return;
+    onAddPlayer(newPlayerName, newPlayerTier);
+    setNewPlayerName('');
+    setNewPlayerTier('B');
+    setShowAddPlayer(false);
+  };
 
   // Close the "more options" dropdown when clicking anywhere outside it
   useEffect(() => {
@@ -220,6 +234,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <button
                       onClick={() => {
                         setShowMenu(false);
+                        setShowAddPlayer(true);
+                      }}
+                      className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Add Player</span>
+                    </button>
+                  )}
+                  {!hideSessionControls && (
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
                         if (confirm('Reset current match scores and schedule back to initial state?')) {
                           onResetSession();
                         }
@@ -332,6 +358,64 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
       </div>
+
+      {/* Add Player Modal */}
+      {showAddPlayer && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white">Add Player</h3>
+              <button
+                onClick={() => setShowAddPlayer(false)}
+                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">
+              Joining mid-session re-balances every match that hasn't been played yet.
+            </p>
+            <input
+              type="text"
+              autoFocus
+              value={newPlayerName}
+              onChange={(e) => setNewPlayerName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleConfirmAddPlayer()}
+              placeholder="Player name"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+            />
+            <div className="flex items-center gap-2">
+              {(['A', 'B', 'C'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setNewPlayerTier(t)}
+                  className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-all ${
+                    newPlayerTier === t
+                      ? 'bg-emerald-600 border-emerald-500 text-white'
+                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Tier {t}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => setShowAddPlayer(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAddPlayer}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-950"
+              >
+                Add to Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

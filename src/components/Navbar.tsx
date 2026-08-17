@@ -7,7 +7,6 @@ import {
   Volume2,
   VolumeX,
   Plus,
-  Download,
   RotateCcw,
   MoreVertical,
   Users,
@@ -18,7 +17,6 @@ import {
   Share2,
   LayoutGrid
 } from 'lucide-react';
-import { exportSessionToJSON } from '../utils/storage';
 
 interface NavbarProps {
   session: TournamentSession;
@@ -157,16 +155,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               {soundOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
 
-            {/* Export JSON */}
-            <button
-              id="btn-export-json"
-              onClick={() => exportSessionToJSON(session)}
-              title="Export Tournament JSON"
-              className="p-2.5 sm:p-2 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-all hidden sm:inline-flex"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-
             {/* Share Live Link + PIN (organizer + umpire only) */}
             {!readOnly && (
               <div className="hidden md:flex items-center space-x-2">
@@ -270,18 +258,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>Reset Current Session</span>
-                    </button>
-                  )}
-                  {!hideSessionControls && (
-                    <button
-                      onClick={() => {
-                        setShowMenu(false);
-                        exportSessionToJSON(session);
-                      }}
-                      className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2 sm:hidden"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Export JSON Backup</span>
                     </button>
                   )}
                 </div>

@@ -205,19 +205,6 @@ export function deleteSession(id: string): void {
 }
 
 /**
- * Export session to JSON file download
- */
-export function exportSessionToJSON(session: TournamentSession): void {
-  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(session, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute('href', dataStr);
-  downloadAnchor.setAttribute('download', `smashmatch_${session.name.replace(/\s+/g, '_')}_${session.date}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-}
-
-/**
  * Subscribes to a session's live data in Firebase (used by Player/Umpire
  * view mode). Returns an unsubscribe function.
  *

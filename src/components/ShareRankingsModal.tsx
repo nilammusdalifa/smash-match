@@ -75,24 +75,24 @@ function drawRankingsCard(canvas: HTMLCanvasElement, sessionName: string, topSta
     ctx.font = '700 17px system-ui, -apple-system, "Segoe UI", sans-serif';
     ctx.fillText(st.player.name, rowPaddingX + 64, centerY);
 
-    // Record (right-aligned, drawn as 3 segments for color)
+    // Record + win rate (right-aligned, built right-to-left as separate
+    // colored segments)
     ctx.textAlign = 'right';
     ctx.font = '600 14px ui-monospace, Menlo, monospace';
-    const lLabel = `${st.matchesLost}L`;
-    const dashLabel = '-';
-    const wLabel = `${st.matchesWon}W`;
     const rightEdge = rowPaddingX + rowWidth - 20;
+    let cursorX = rightEdge;
 
-    ctx.fillStyle = '#fb7185';
-    ctx.fillText(lLabel, rightEdge, centerY);
-    const lWidth = ctx.measureText(lLabel).width;
+    const drawSegment = (label: string, color: string, gapAfter = 0) => {
+      ctx.fillStyle = color;
+      ctx.fillText(label, cursorX, centerY);
+      cursorX -= ctx.measureText(label).width + gapAfter;
+    };
 
-    ctx.fillStyle = '#64748b';
-    ctx.fillText(dashLabel, rightEdge - lWidth - 2, centerY);
-    const dashWidth = ctx.measureText(dashLabel).width;
-
-    ctx.fillStyle = '#34d399';
-    ctx.fillText(wLabel, rightEdge - lWidth - dashWidth - 4, centerY);
+    drawSegment(`${st.matchesLost}L`, '#fb7185', 2);
+    drawSegment('-', '#64748b', 4);
+    drawSegment(`${st.matchesWon}W`, '#34d399', 10);
+    drawSegment('•', '#475569', 10);
+    drawSegment(`${st.winRate}%`, '#cbd5e1');
   });
 }
 

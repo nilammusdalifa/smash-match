@@ -332,6 +332,32 @@ export default function App() {
     persistSession(nextSession);
   };
 
+  // Change how many courts the session has mid-session, re-balancing every
+  // not-yet-played match against the new count (more courts means more
+  // people play per round instead of resting).
+  const handleUpdateCourtCount = (newCount: number) => {
+    if (!session || newCount < 1) return;
+
+    // Refuse to drop a court that's mid-match — nothing to safely do with
+    // that live match's court assignment otherwise.
+    const courtsBeingRemoved = session.courts.filter((c) => Number(c.id) > newCount);
+    if (courtsBeingRemoved.some((c) => c.currentMatchId)) {
+      alert('Finish or move the match on the court you want to remove first.');
+      return;
+    }
+
+    const newCourts = Array.from({ length: newCount }, (_, i) => {
+      const id = (i + 1).toString();
+      return session.courts.find((c) => c.id === id) || { id, name: `Court ${id}`, isActive: true };
+    });
+
+    const sessionWithCourts = { ...session, courtCount: newCount, courts: newCourts };
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithCourts, newCount);
+    const nextSession: TournamentSession = { ...sessionWithCourts, matches, totalRounds };
+    setSession(nextSession);
+    persistSession(nextSession);
+  };
+
   // Remove a not-yet-played match. The 4 freed-up players simply sit out
   // that round — nothing else in the schedule shifts.
   const handleDeleteMatch = (matchId: string) => {
@@ -441,6 +467,7 @@ export default function App() {
         onOpenNewSessionModal={() => setShowSetupModal(true)}
         onResetSession={handleResetSession}
         onAddPlayer={handleAddPlayer}
+        onUpdateCourtCount={handleUpdateCourtCount}
         readOnly={isReadOnlyPlayer}
         hideSessionControls={isRemoteMode}
       />

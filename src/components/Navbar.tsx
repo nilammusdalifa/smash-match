@@ -14,7 +14,8 @@ import {
   BarChart3,
   Calendar,
   Grid,
-  Share2
+  Share2,
+  LayoutGrid
 } from 'lucide-react';
 import { exportSessionToJSON } from '../utils/storage';
 
@@ -25,6 +26,7 @@ interface NavbarProps {
   onOpenNewSessionModal: () => void;
   onResetSession: () => void;
   onAddPlayer: (name: string, tier: 'A' | 'B' | 'C') => void;
+  onUpdateCourtCount: (count: number) => void;
   /** Player (view-only) mode: hides everything that mutates the session. */
   readOnly?: boolean;
   /**
@@ -43,6 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenNewSessionModal,
   onResetSession,
   onAddPlayer,
+  onUpdateCourtCount,
   readOnly = false,
   hideSessionControls = false,
 }) => {
@@ -52,6 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showAddPlayer, setShowAddPlayer] = useState<boolean>(false);
   const [newPlayerName, setNewPlayerName] = useState<string>('');
   const [newPlayerTier, setNewPlayerTier] = useState<'A' | 'B' | 'C'>('B');
+  const [showChangeCourts, setShowChangeCourts] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleConfirmAddPlayer = () => {
@@ -246,6 +250,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <button
                       onClick={() => {
                         setShowMenu(false);
+                        setShowChangeCourts(true);
+                      }}
+                      className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2"
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <span>Change Courts</span>
+                    </button>
+                  )}
+                  {!hideSessionControls && (
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
                         if (confirm('Reset current match scores and schedule back to initial state?')) {
                           onResetSession();
                         }
@@ -411,6 +427,54 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-950"
               >
                 Add to Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Courts Modal */}
+      {showChangeCourts && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white">Change Courts</h3>
+              <button
+                onClick={() => setShowChangeCourts(false)}
+                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">
+              Re-balances every match that hasn't been played yet. A court
+              with a live match on it can't be removed until that match is
+              finished or moved.
+            </p>
+            <div className="grid grid-cols-5 gap-1.5">
+              {[1, 2, 3, 4, 6].map((cnt) => (
+                <button
+                  key={cnt}
+                  onClick={() => {
+                    onUpdateCourtCount(cnt);
+                    setShowChangeCourts(false);
+                  }}
+                  className={`py-2.5 rounded-xl font-bold text-xs border transition-all cursor-pointer ${
+                    session.courtCount === cnt
+                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950'
+                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white'
+                  }`}
+                >
+                  {cnt}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center justify-end pt-2 border-t border-slate-800">
+              <button
+                onClick={() => setShowChangeCourts(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+              >
+                Close
               </button>
             </div>
           </div>

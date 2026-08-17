@@ -83,84 +83,159 @@ export function computeGamesPlayed(matches: Match[]): Map<string, number> {
   return counts;
 }
 
+type TeamSplit = { t1: [Player, Player]; t2: [Player, Player] };
+
 /**
- * Given exactly 4 players, picks the fairest 2v2 split. In priority order:
- * 1. Smallest tier gap between the two teams (don't stack all the strength
- *    on one side).
- * 2. Avoid putting anyone into a carry pairing (mixed-tier teammate) for the
- *    second match in a row.
- * 3. Nudge each player's carry/hard game count back toward parity over the
- *    session, so nobody is always the one carrying or always being carried.
- * 4. Minimize repeat partnerships (existing tiebreak).
+ * Lower is better. Scores a specific 2v2 split by, in order of weight:
+ * 1. Tier gap bucket — 0/1 point gap is "fair" (tied); anything wider is a
+ *    real mismatch and dominates everything else.
+ * 2. Repeat-carry violations — putting someone into a mixed-tier (carry)
+ *    pairing for the second time running.
+ * 3. Carry/hard balance — nudges each player's carry vs. hard game count
+ *    back toward parity over the session.
+ * 4. Repeat partnerships (existing tiebreak).
+ * Exported as a plain number (not just a comparator) so `pickBestFoursome`
+ * can compare candidate foursomes against each other, not just compare
+ * splits within one fixed foursome.
  */
+function scoreTeamSplit(
+  c: TeamSplit,
+  partnerCounts: Map<string, number>,
+  carryHistory: Map<string, CarryStats>
+): number {
+  const getPairKey = (id1: string, id2: string) => [id1, id2].sort().join('-');
+
+  const tierGap = Math.abs(
+    (tierScore(c.t1[0]) + tierScore(c.t1[1])) - (tierScore(c.t2[0]) + tierScore(c.t2[1]))
+  );
+  // A gap of 0 or 1 is a fair match already (e.g. A+B vs A+B, or A+A vs A+B)
+  // — treat those as tied. A wider gap (e.g. A+A vs B+B, gap 2) is a real
+  // strength mismatch even though nobody's carrying within their own team,
+  // so it does NOT count as a fair alternative to a carry pairing; the fix
+  // for repeat carries is choosing WHO plays together (pickBestFoursome),
+  // not accepting a lopsided team matchup.
+  const tierGapBucket = tierGap <= 1 ? 0 : tierGap;
+
+  let repeatCarryViolations = 0;
+  let carryBalanceScore = 0;
+  [c.t1, c.t2].forEach((team) => {
+    const carry = isCarryPairing(team[0], team[1]);
+    team.forEach((p) => {
+      const stats = carryHistory.get(p.id) || { carryCount: 0, hardCount: 0, lastWasCarry: null };
+      if (carry && stats.lastWasCarry) repeatCarryViolations++;
+      carryBalanceScore += carry ? stats.carryCount - stats.hardCount : stats.hardCount - stats.carryCount;
+    });
+  });
+
+  const partnerCost =
+    (partnerCounts.get(getPairKey(c.t1[0].id, c.t1[1].id)) || 0) +
+    (partnerCounts.get(getPairKey(c.t2[0].id, c.t2[1].id)) || 0);
+
+  return tierGapBucket * 1000 + repeatCarryViolations * 100 + carryBalanceScore * 10 + partnerCost;
+}
+
+/** Given exactly 4 players, picks the lowest-scoring 2v2 split (see `scoreTeamSplit`). */
 export function pickBestTeamSplit(
   four: [Player, Player, Player, Player],
   opts: { partnerCounts?: Map<string, number>; carryHistory?: Map<string, CarryStats> } = {}
-): { t1: [Player, Player]; t2: [Player, Player] } {
+): TeamSplit {
   const partnerCounts = opts.partnerCounts || new Map<string, number>();
   const carryHistory = opts.carryHistory || new Map<string, CarryStats>();
-  const getPairKey = (id1: string, id2: string) => [id1, id2].sort().join('-');
 
-  type Config = { t1: [Player, Player]; t2: [Player, Player] };
-  const configs: Config[] = [
+  const configs: TeamSplit[] = [
     { t1: [four[0], four[1]], t2: [four[2], four[3]] },
     { t1: [four[0], four[2]], t2: [four[1], four[3]] },
     { t1: [four[0], four[3]], t2: [four[1], four[2]] },
   ];
 
-  const tierGap = (c: Config) =>
-    Math.abs((tierScore(c.t1[0]) + tierScore(c.t1[1])) - (tierScore(c.t2[0]) + tierScore(c.t2[1])));
-
-  // A gap of 0-2 is still a reasonably competitive match — e.g. A+B vs A+B
-  // (gap 0, both teams carrying) and A+A vs B+B (gap 2, both teams playing
-  // their own level) are both fine outcomes. Treat those as tied so carry
-  // history gets to pick between them, instead of the perfectly-balanced
-  // carry pairing always winning and locking the same players into carrying
-  // every round. A real blowout (gap 3+, e.g. stacking A+A vs B+C) still
-  // dominates outright regardless of carry history.
-  const tierGapBucket = (c: Config) => {
-    const gap = tierGap(c);
-    return gap <= 2 ? 0 : gap;
-  };
-
-  const repeatCarryViolations = (c: Config) => {
-    let count = 0;
-    [c.t1, c.t2].forEach((team) => {
-      if (!isCarryPairing(team[0], team[1])) return;
-      team.forEach((p) => {
-        if (carryHistory.get(p.id)?.lastWasCarry) count++;
-      });
-    });
-    return count;
-  };
-
-  const carryBalanceScore = (c: Config) => {
-    let score = 0;
-    [c.t1, c.t2].forEach((team) => {
-      const carry = isCarryPairing(team[0], team[1]);
-      team.forEach((p) => {
-        const stats = carryHistory.get(p.id) || { carryCount: 0, hardCount: 0, lastWasCarry: null };
-        score += carry ? stats.carryCount - stats.hardCount : stats.hardCount - stats.carryCount;
-      });
-    });
-    return score;
-  };
-
-  const partnerCost = (c: Config) =>
-    (partnerCounts.get(getPairKey(c.t1[0].id, c.t1[1].id)) || 0) +
-    (partnerCounts.get(getPairKey(c.t2[0].id, c.t2[1].id)) || 0);
-
-  configs.sort((cA, cB) => {
-    const tg = tierGapBucket(cA) - tierGapBucket(cB);
-    if (tg !== 0) return tg;
-    const rc = repeatCarryViolations(cA) - repeatCarryViolations(cB);
-    if (rc !== 0) return rc;
-    const cb = carryBalanceScore(cA) - carryBalanceScore(cB);
-    if (cb !== 0) return cb;
-    return partnerCost(cA) - partnerCost(cB);
-  });
+  configs.sort(
+    (cA, cB) => scoreTeamSplit(cA, partnerCounts, carryHistory) - scoreTeamSplit(cB, partnerCounts, carryHistory)
+  );
 
   return configs[0];
+}
+
+function chooseKCombinations<T>(arr: T[], k: number): T[][] {
+  if (k === 0) return [[]];
+  if (arr.length < k) return [];
+  const [head, ...rest] = arr;
+  const withHead = chooseKCombinations(rest, k - 1).map((c) => [head, ...c]);
+  const withoutHead = chooseKCombinations(rest, k);
+  return [...withHead, ...withoutHead];
+}
+
+/**
+ * Picks which 4 players should play together, not just how to split a fixed
+ * 4 — this is what actually lets a player who just carried get a genuinely
+ * fair "hard" game (same-tier partner AND a similarly-matched opponent),
+ * instead of only ever choosing between whichever 4 people happened to be
+ * next in the rest rotation. `mustPlay` are non-negotiable (they've rested
+ * more than anyone and must play this round); `tiedCandidates` are equally
+ * deserving of a slot, so the choice of which of them fill the remaining
+ * `slotsNeeded` spots is free to optimize for carry balance. Brute-forces
+ * every valid combination — fine at real-world club sizes, capped to avoid
+ * blowing up for large tied pools.
+ */
+function pickBestFoursome(
+  mustPlay: Player[],
+  tiedCandidates: Player[],
+  slotsNeeded: number,
+  partnerCounts: Map<string, number>,
+  carryHistory: Map<string, CarryStats>
+): { four: [Player, Player, Player, Player]; split: TeamSplit } {
+  const MAX_TIED_POOL_FOR_SEARCH = 14;
+  const pool = tiedCandidates.length <= MAX_TIED_POOL_FOR_SEARCH
+    ? tiedCandidates
+    : tiedCandidates.slice(0, MAX_TIED_POOL_FOR_SEARCH);
+
+  const combos = slotsNeeded > 0 ? chooseKCombinations(pool, slotsNeeded) : [[]];
+
+  let best: { four: [Player, Player, Player, Player]; split: TeamSplit; score: number } | null = null;
+  combos.forEach((tiedSubset) => {
+    const four = [...mustPlay, ...tiedSubset] as [Player, Player, Player, Player];
+    const split = pickBestTeamSplit(four, { partnerCounts, carryHistory });
+    const score = scoreTeamSplit(split, partnerCounts, carryHistory);
+    if (!best || score < best.score) {
+      best = { four, split, score };
+    }
+  });
+
+  return best!;
+}
+
+/**
+ * Public entry point for picking a single match out of a pool of available
+ * players (Auto Fill, reshuffle-one-match) — same rule as the main
+ * scheduler: whoever's played the fewest games must be included, and the
+ * choice among anyone tied on games played is optimized for tier balance
+ * and carry fairness rather than picked arbitrarily.
+ */
+export function pickBestAvailableFoursome(
+  available: Player[],
+  opts: {
+    gamesPlayed?: Map<string, number>;
+    partnerCounts?: Map<string, number>;
+    carryHistory?: Map<string, CarryStats>;
+  } = {}
+): { four: [Player, Player, Player, Player]; split: TeamSplit } {
+  const gamesPlayed = opts.gamesPlayed || new Map<string, number>();
+  const partnerCounts = opts.partnerCounts || new Map<string, number>();
+  const carryHistory = opts.carryHistory || new Map<string, CarryStats>();
+
+  const pool = [...available].sort((a, b) => {
+    const gA = gamesPlayed.get(a.id) || 0;
+    const gB = gamesPlayed.get(b.id) || 0;
+    if (gA !== gB) return gA - gB;
+    return Math.random() - 0.5;
+  });
+
+  const cutoffPlayer = pool[3];
+  const cutoffGames = cutoffPlayer ? gamesPlayed.get(cutoffPlayer.id) || 0 : -1;
+  const mustPlay = pool.filter((p) => (gamesPlayed.get(p.id) || 0) < cutoffGames);
+  const tiedCandidates = pool.filter((p) => (gamesPlayed.get(p.id) || 0) === cutoffGames);
+  const slotsNeeded = 4 - mustPlay.length;
+
+  return pickBestFoursome(mustPlay, tiedCandidates, slotsNeeded, partnerCounts, carryHistory);
 }
 
 /**
@@ -202,17 +277,41 @@ function generateGeneralRounds(
 
     const matchesPerRound = Math.min(courtCount, Math.floor(n / 4));
     const playersInRoundCount = matchesPerRound * 4;
-    const selectedPlayers = pool.slice(0, playersInRoundCount);
-    const restingIds = pool.slice(playersInRoundCount).map((p) => p.id);
+
+    // Whoever has played strictly fewer games than the round's cutoff MUST
+    // play this round — that's the non-negotiable fairness guarantee.
+    // Everyone tied at the cutoff value is equally deserving of a slot, so
+    // which of THEM fill the remaining spots is free to pick for carry
+    // balance instead of arbitrary sort order.
+    const cutoffPlayer = pool[playersInRoundCount - 1];
+    const cutoffGames = cutoffPlayer ? gamesPlayed.get(cutoffPlayer.id) || 0 : -1;
+    let remainingMustPlay = pool.filter((p) => (gamesPlayed.get(p.id) || 0) < cutoffGames);
+    let remainingTied = pool.filter((p) => (gamesPlayed.get(p.id) || 0) === cutoffGames);
+    const alreadyResting = pool.filter((p) => (gamesPlayed.get(p.id) || 0) > cutoffGames).map((p) => p.id);
+
+    // Built without restingPlayerIds first — the full round has to be
+    // settled (every court's foursome chosen) before we know who's left
+    // over, otherwise an earlier court's match would wrongly list players
+    // who are about to be assigned to a later court as "resting".
+    const roundMatches: Match[] = [];
 
     for (let m = 0; m < matchesPerRound; m++) {
-      const four = selectedPlayers.slice(m * 4, m * 4 + 4);
-      if (four.length < 4) break;
+      const mustPlayForThisMatch = remainingMustPlay.slice(0, 4);
+      remainingMustPlay = remainingMustPlay.slice(mustPlayForThisMatch.length);
+      const slotsNeeded = 4 - mustPlayForThisMatch.length;
+      if (mustPlayForThisMatch.length + remainingTied.length < 4) break;
 
-      const best = pickBestTeamSplit(four as [Player, Player, Player, Player], {
+      const { four, split: best } = pickBestFoursome(
+        mustPlayForThisMatch,
+        remainingTied,
+        slotsNeeded,
         partnerCounts,
-        carryHistory,
-      });
+        carryHistory
+      );
+      const chosenTiedIds = new Set(
+        four.filter((p) => !mustPlayForThisMatch.some((mp) => mp.id === p.id)).map((p) => p.id)
+      );
+      remainingTied = remainingTied.filter((p) => !chosenTiedIds.has(p.id));
 
       four.forEach((p) => gamesPlayed.set(p.id, (gamesPlayed.get(p.id) || 0) + 1));
       const k1 = getPairKey(best.t1[0].id, best.t1[1].id);
@@ -232,7 +331,7 @@ function generateGeneralRounds(
       });
 
       const assignedCourt = ((m % courtCount) + 1).toString();
-      matches.push({
+      roundMatches.push({
         id: generateId(),
         roundNumber: r,
         matchNumber: matchNum++,
@@ -247,9 +346,17 @@ function generateGeneralRounds(
           history: [],
         },
         status: 'scheduled',
-        restingPlayerIds: restingIds,
       });
     }
+
+    // Now that every court's foursome for this round is settled, the true
+    // resting list is whoever's left over — attach it to all of the round's
+    // matches at once.
+    const restingIds = [...alreadyResting, ...remainingTied.map((p) => p.id)];
+    roundMatches.forEach((m) => {
+      m.restingPlayerIds = restingIds;
+    });
+    matches.push(...roundMatches);
   }
 
   return matches;

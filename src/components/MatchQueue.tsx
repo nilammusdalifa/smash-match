@@ -18,8 +18,7 @@ import {
 } from 'lucide-react';
 import {
   generateId,
-  tierScore,
-  pickBestTeamSplit,
+  pickBestAvailableFoursome,
   computeCarryHistory,
   computePartnerCounts,
   computeGamesPlayed,
@@ -163,24 +162,15 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     }
 
     // Real match history (completed + in-progress) drives fairness: fewest
-    // games played gets first pick, and the team split avoids repeat carry
-    // roles / repeat partners / tier stacking — same rules the
-    // auto-generated schedule uses.
+    // games played must play, and who fills the rest (when several people
+    // are tied) is chosen for tier balance and carry fairness — same rules
+    // the auto-generated schedule uses.
     const historyMatches = session.matches.filter((m) => m.status !== 'scheduled');
     const gamesPlayed = computeGamesPlayed(historyMatches);
     const carryHistory = computeCarryHistory(historyMatches);
     const partnerCounts = computePartnerCounts(historyMatches);
 
-    const four = [...available]
-      .sort((a, b) => {
-        const gA = gamesPlayed.get(a.id) || 0;
-        const gB = gamesPlayed.get(b.id) || 0;
-        if (gA !== gB) return gA - gB;
-        return Math.random() - 0.5;
-      })
-      .slice(0, 4) as [Player, Player, Player, Player];
-
-    const best = pickBestTeamSplit(four, { partnerCounts, carryHistory });
+    const { split: best } = pickBestAvailableFoursome(available, { gamesPlayed, partnerCounts, carryHistory });
 
     setCustomP1(best.t1[0].id);
     setCustomP2(best.t1[1].id);
@@ -216,16 +206,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     const carryHistory = computeCarryHistory(historyMatches);
     const partnerCounts = computePartnerCounts(historyMatches);
 
-    const four = [...available]
-      .sort((a, b) => {
-        const gA = gamesPlayed.get(a.id) || 0;
-        const gB = gamesPlayed.get(b.id) || 0;
-        if (gA !== gB) return gA - gB;
-        return Math.random() - 0.5;
-      })
-      .slice(0, 4) as [Player, Player, Player, Player];
-
-    const best = pickBestTeamSplit(four, { partnerCounts, carryHistory });
+    const { split: best } = pickBestAvailableFoursome(available, { gamesPlayed, partnerCounts, carryHistory });
     setSwapP1(best.t1[0].id);
     setSwapP2(best.t1[1].id);
     setSwapP3(best.t2[0].id);

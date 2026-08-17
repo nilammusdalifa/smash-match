@@ -2,16 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Match, GameRules } from '../types/badminton';
 import { soundManager } from '../utils/audio';
 import confetti from 'canvas-confetti';
-import { 
-  X, 
-  RotateCcw, 
-  ArrowLeftRight, 
-  Trophy, 
-  Sparkles, 
+import {
+  X,
+  RotateCcw,
+  ArrowLeftRight,
+  Trophy,
+  Sparkles,
   ShieldAlert,
   Volume2,
-  CheckCircle2,
-  Clock
+  CheckCircle2
 } from 'lucide-react';
 
 interface ScorekeeperModalProps {
@@ -38,7 +37,6 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
     { t1: match.score.team1Score || 0, t2: match.score.team2Score || 0, server: 1 },
   ]);
   const [swappedEnds, setSwappedEnds] = useState<boolean>(false);
-  const [intervalAnnounced, setIntervalAnnounced] = useState<boolean>(false);
 
   // Sync initial state if match changes
   useEffect(() => {
@@ -56,16 +54,6 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
   const isTeam1Won = t1Score >= targetScore && (t1Score - t2Score >= 2 || t1Score >= maxCap);
   const isTeam2Won = t2Score >= targetScore && (t2Score - t1Score >= 2 || t2Score >= maxCap);
   const isGameOver = isTeam1Won || isTeam2Won;
-
-  // Interval check (scales with the game's actual point target, e.g. 11 for a 21-pt game, 15 for a 30-pt game)
-  const intervalScore = rules.changeEndsAtScore || Math.ceil(targetScore / 2);
-  useEffect(() => {
-    if (!intervalAnnounced && (t1Score === intervalScore || t2Score === intervalScore)) {
-      setIntervalAnnounced(true);
-      soundManager.playWhistle();
-      soundManager.announce(`Interval! ${t1Score} to ${t2Score}. 60 seconds interval.`);
-    }
-  }, [t1Score, t2Score, intervalAnnounced, intervalScore]);
 
   // Handle scoring a point
   const addPoint = (team: 1 | 2) => {

@@ -12,7 +12,6 @@ export const DEFAULT_RULES: GameRules = {
   maxPointsCap: 30,
   numberOfSets: 1,
   suddenDeathAtCap: true,
-  changeEndsAtScore: 15,
 };
 
 export const DEFAULT_PLAYERS: Player[] = [

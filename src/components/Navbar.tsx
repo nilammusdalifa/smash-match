@@ -57,6 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [newPlayerName, setNewPlayerName] = useState<string>('');
   const [newPlayerTier, setNewPlayerTier] = useState<'A' | 'B' | 'C'>('B');
   const [showChangeCourts, setShowChangeCourts] = useState<boolean>(false);
+  const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleConfirmAddPlayer = () => {
@@ -263,9 +264,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <button
                       onClick={() => {
                         setShowMenu(false);
-                        if (confirm('Reset current match scores and schedule back to initial state?')) {
-                          onResetSession();
-                        }
+                        setShowResetConfirm(true);
                       }}
                       className="w-full text-left px-4 py-2 text-rose-400 hover:bg-slate-800 flex items-center space-x-2"
                     >
@@ -481,6 +480,43 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Reset Session Confirmation Modal — portaled, see the note above. */}
+      {showResetConfirm && createPortal(
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">Reset Current Session?</h3>
+            </div>
+            <p className="text-xs text-slate-400">
+              This clears every score and regenerates the schedule from
+              scratch. Players and settings stay the same, but match results
+              can't be recovered afterward.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowResetConfirm(false);
+                  onResetSession();
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md shadow-rose-950"
+              >
+                Reset Session
               </button>
             </div>
           </div>

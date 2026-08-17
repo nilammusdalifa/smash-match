@@ -62,7 +62,6 @@ export interface GameRules {
   maxPointsCap: number;      // e.g. 30 for 21-pt, or 17 for 15-pt
   numberOfSets: number;      // usually 1 set for social round-robin, 3 for tournament
   suddenDeathAtCap: boolean;
-  changeEndsAtScore?: number; // e.g. 11 for 21-pt game
 }
 
 export interface TournamentSession {

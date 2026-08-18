@@ -4,10 +4,7 @@ import { computePlayerStats } from '../utils/ranking';
 import {
   BarChart3,
   Activity,
-  Flame,
   Clock,
-  Award,
-  Zap,
   PieChart,
   Scale
 } from 'lucide-react';
@@ -23,20 +20,16 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ session 
   const maxGamesPlayed = Math.max(1, ...stats.map((st) => st.matchesPlayed));
   const gamesPlayedFairness = [...stats].sort((a, b) => b.matchesPlayed - a.matchesPlayed);
 
-  // Points analytics
-  let totalPointsScored = 0;
+  // Margin analytics
   let closeMatchesCount = 0; // margin <= 3
   let blowoutMatchesCount = 0; // margin >= 8
 
   completedMatches.forEach((m) => {
-    const pts = m.score.team1Score + m.score.team2Score;
     const diff = Math.abs(m.score.team1Score - m.score.team2Score);
-    totalPointsScored += pts;
     if (diff <= 3) closeMatchesCount++;
     if (diff >= 8) blowoutMatchesCount++;
   });
 
-  const avgPointsPerMatch = completedMatches.length > 0 ? Math.round(totalPointsScored / completedMatches.length) : 0;
   const mediumMarginCount = Math.max(0, completedMatches.length - closeMatchesCount - blowoutMatchesCount);
 
   return (
@@ -48,7 +41,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ session 
       </h2>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-1">
           <div className="text-xs text-slate-400 font-medium flex items-center justify-between">
             <span>Matches Completed</span>
@@ -59,32 +52,6 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ session 
           </div>
           <div className="text-[11px] text-emerald-400 font-semibold">
             {totalMatches > 0 ? Math.round((completedMatches.length / totalMatches) * 100) : 0}% complete
-          </div>
-        </div>
-
-        <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-1">
-          <div className="text-xs text-slate-400 font-medium flex items-center justify-between">
-            <span>Total Points Scored</span>
-            <Flame className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="text-2xl font-black text-white font-mono">
-            {totalPointsScored}
-          </div>
-          <div className="text-[11px] text-slate-400">
-            Across all doubles rallies
-          </div>
-        </div>
-
-        <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-1">
-          <div className="text-xs text-slate-400 font-medium flex items-center justify-between">
-            <span>Avg Points / Game</span>
-            <Zap className="w-4 h-4 text-teal-400" />
-          </div>
-          <div className="text-2xl font-black text-white font-mono">
-            {avgPointsPerMatch}
-          </div>
-          <div className="text-[11px] text-teal-400 font-semibold">
-            Target win: {session.rules.pointsToWin} pts
           </div>
         </div>
 

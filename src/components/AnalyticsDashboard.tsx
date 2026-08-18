@@ -42,15 +42,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ session 
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-800">
-        <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span>Stats</span>
-        </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Match stats for this session.
-        </p>
-      </div>
+      <h2 className="text-base font-bold text-white flex items-center gap-2 px-1">
+        <BarChart3 className="w-5 h-5 text-emerald-400 shrink-0" />
+        <span>Stats</span>
+      </h2>
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

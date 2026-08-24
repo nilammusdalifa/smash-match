@@ -36,7 +36,13 @@ const PlayerPicker: React.FC<PlayerPickerProps> = ({ players, value, onChange })
         setOpen(false);
       }
     };
-    const handleScroll = () => setOpen(false);
+    // Scroll capture fires for scrolling inside the list itself too (that's
+    // the whole point of the list) — only close for a scroll elsewhere,
+    // which means the button's on-screen position is no longer valid.
+    const handleScroll = (e: Event) => {
+      if (listRef.current && listRef.current.contains(e.target as Node)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('scroll', handleScroll, true);
     return () => {

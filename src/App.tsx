@@ -408,7 +408,7 @@ export default function App() {
   // Change how many courts the session has mid-session, re-balancing every
   // not-yet-played match against the new count (more courts means more
   // people play per round instead of resting).
-  const handleUpdateCourtCount = (newCount: number) => {
+  const handleUpdateCourtCount = (newCount: number, newCourtNames?: string[]) => {
     if (!session || newCount < 1) return;
 
     // Refuse to drop a court that's mid-match — nothing to safely do with
@@ -419,9 +419,17 @@ export default function App() {
       return;
     }
 
+    // Existing courts keep their own name unless a different one was typed;
+    // a brand-new court gets the name typed for it (e.g. "Court 8" when
+    // going from 1 court to 2), or "Court N" if none was given.
     const newCourts = Array.from({ length: newCount }, (_, i) => {
       const id = (i + 1).toString();
-      return session.courts.find((c) => c.id === id) || { id, name: `Court ${id}`, isActive: true };
+      const existing = session.courts.find((c) => c.id === id);
+      const typedName = newCourtNames?.[i]?.trim();
+      if (existing) {
+        return typedName ? { ...existing, name: typedName } : existing;
+      }
+      return { id, name: typedName || `Court ${id}`, isActive: true };
     });
 
     const sessionWithCourts = { ...session, courtCount: newCount, courts: newCourts };

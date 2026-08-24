@@ -10,6 +10,10 @@ export interface Player {
   skillLevel?: 'A' | 'B' | 'C';
   active: boolean;
   notes?: string;
+  /** Undefined = present since session start. */
+  arrivedAt?: number;
+  /** Set when someone leaves early; undefined = still here. */
+  leftAt?: number;
 }
 
 export interface MatchScore {

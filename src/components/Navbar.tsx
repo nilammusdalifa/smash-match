@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { TournamentSession } from '../types/badminton';
 import { soundManager } from '../utils/audio';
+import { AttendanceModal } from './AttendanceModal';
 import {
   Trophy,
   Volume2,
@@ -11,6 +12,7 @@ import {
   MoreVertical,
   Users,
   UserPlus,
+  UserCheck,
   BarChart3,
   Calendar,
   Grid,
@@ -26,6 +28,7 @@ interface NavbarProps {
   onResetSession: () => void;
   onAddPlayer: (name: string, tier: 'A' | 'B' | 'C') => void;
   onUpdateCourtCount: (count: number) => void;
+  onSetPlayerPresence: (playerId: string, present: boolean) => void;
   /** Player (view-only) mode: hides everything that mutates the session. */
   readOnly?: boolean;
   /**
@@ -45,6 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onResetSession,
   onAddPlayer,
   onUpdateCourtCount,
+  onSetPlayerPresence,
   readOnly = false,
   hideSessionControls = false,
 }) => {
@@ -56,6 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [newPlayerTier, setNewPlayerTier] = useState<'A' | 'B' | 'C'>('B');
   const [showChangeCourts, setShowChangeCourts] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
+  const [showAttendance, setShowAttendance] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleConfirmAddPlayer = () => {
@@ -240,6 +245,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <button
                       onClick={() => {
                         setShowMenu(false);
+                        setShowAttendance(true);
+                      }}
+                      className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Who's Here</span>
+                    </button>
+                  )}
+                  {!hideSessionControls && (
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
                         setShowChangeCourts(true);
                       }}
                       className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2"
@@ -411,6 +428,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
         </div>,
+        document.body
+      )}
+
+      {showAttendance && createPortal(
+        <AttendanceModal
+          session={session}
+          onSetPlayerPresence={onSetPlayerPresence}
+          onClose={() => setShowAttendance(false)}
+        />,
         document.body
       )}
 

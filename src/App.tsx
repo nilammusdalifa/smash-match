@@ -332,6 +332,25 @@ export default function App() {
     persistSession(nextSession);
   };
 
+  // Mark someone as here / not here yet. Everyone is present by default, so
+  // this is only used for the exceptions (late arrivals, early leavers), and
+  // it re-balances every match that hasn't been played yet.
+  const handleSetPlayerPresence = (playerId: string, present: boolean) => {
+    if (!session) return;
+    const now = Date.now();
+    const updatedPlayers = session.players.map((p) => {
+      if (p.id !== playerId) return p;
+      return present
+        ? { ...p, arrivedAt: p.arrivedAt ?? session.createdAt, leftAt: undefined }
+        : { ...p, leftAt: now };
+    });
+    const sessionWithPresence = { ...session, players: updatedPlayers };
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPresence);
+    const nextSession: TournamentSession = { ...sessionWithPresence, matches, totalRounds };
+    setSession(nextSession);
+    persistSession(nextSession);
+  };
+
   // Change how many courts the session has mid-session, re-balancing every
   // not-yet-played match against the new count (more courts means more
   // people play per round instead of resting).
@@ -468,6 +487,7 @@ export default function App() {
         onResetSession={handleResetSession}
         onAddPlayer={handleAddPlayer}
         onUpdateCourtCount={handleUpdateCourtCount}
+        onSetPlayerPresence={handleSetPlayerPresence}
         readOnly={isReadOnlyPlayer}
         hideSessionControls={isRemoteMode}
       />

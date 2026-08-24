@@ -1,4 +1,5 @@
 import { Match, Player, GameRules, Court, TournamentSession } from '../types/badminton';
+import { presentPlayers } from './fairness';
 
 /**
  * Generate unique ID
@@ -402,21 +403,24 @@ function generateGeneralRounds(
 export function regenerateRemainingSchedule(
   session: TournamentSession
 ): { matches: Match[]; totalRounds: number } {
-  const activePlayers = session.players.filter((p) => p.active);
+  // Only players who are both active and actually here get scheduled — an
+  // away player (or one who hasn't arrived yet) is left out of the unplayed
+  // tail until they're marked back.
+  const schedulablePlayers = presentPlayers(session.players, Date.now(), session.createdAt);
   const lockedMatches = session.matches.filter((m) => m.status !== 'scheduled');
 
-  if (activePlayers.length < 4 || session.courts.length === 0) {
+  if (schedulablePlayers.length < 4 || session.courts.length === 0) {
     return { matches: lockedMatches, totalRounds: session.totalRounds };
   }
 
   const maxLockedRound = lockedMatches.reduce((max, m) => Math.max(max, m.roundNumber), 0);
   const nextRound = maxLockedRound + 1;
-  const desiredRounds = Math.min(10, Math.max(5, activePlayers.length));
+  const desiredRounds = Math.min(10, Math.max(5, schedulablePlayers.length));
   const roundsToGenerate = Math.max(3, desiredRounds - maxLockedRound);
   const nextMatchNumber = lockedMatches.reduce((max, m) => Math.max(max, m.matchNumber), 0) + 1;
 
   const newMatches = generateGeneralRounds(
-    activePlayers,
+    schedulablePlayers,
     session.courts,
     nextRound,
     roundsToGenerate,

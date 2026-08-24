@@ -39,7 +39,7 @@ export const AttendanceModal: React.FC<AttendanceModalProps> = ({
           left out of matches until you mark them back.
         </p>
 
-        <div className="p-5 space-y-2 overflow-y-auto">
+        <div className="p-5 space-y-2 overflow-y-auto min-h-0">
           {session.players.map((p) => {
             const here = isPresentAt(p, now, session.createdAt);
             return (

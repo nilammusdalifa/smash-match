@@ -46,7 +46,7 @@ export const PartnerRequestsModal: React.FC<PartnerRequestsModalProps> = ({
           Each pair gets put together once, as early as both are here.
         </p>
 
-        <div className="p-5 space-y-3 overflow-y-auto">
+        <div className="p-5 space-y-3 overflow-y-auto min-h-0">
           <div className="flex items-center gap-2">
             <select
               value={a}

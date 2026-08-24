@@ -226,12 +226,13 @@ export default function App() {
     const matchIdx = session.matches.findIndex((m) => m.id === matchId);
     if (matchIdx < 0) return;
 
+    const court = session.courts.find((c) => c.id === courtId);
     const targetMatch = {
       ...session.matches[matchIdx],
       status: 'in_progress' as const,
       startTime: Date.now(),
       courtId,
-      courtName: `Court ${courtId}`,
+      courtName: court?.name || `Court ${courtId}`,
     };
 
     const updatedCourts = session.courts.map((c) => {
@@ -257,12 +258,13 @@ export default function App() {
     const p3 = targetMatch.team2.player1.name;
     const p4 = targetMatch.team2.player2.name;
 
+    const courtLabel = court?.name || `Court ${courtId}`;
     addNotification(
       'Match Starting',
-      `Court ${courtId}: ${p1} & ${p2} vs ${p3} & ${p4}`,
-      `Court ${courtId}`,
+      `${courtLabel}: ${p1} & ${p2} vs ${p3} & ${p4}`,
+      courtLabel,
       'match_start',
-      `Match starting on Court ${courtId}. ${p1} and ${p2} versus ${p3} and ${p4}. Ready, play!`
+      `Match starting on ${courtLabel}. ${p1} and ${p2} versus ${p3} and ${p4}. Ready, play!`
     );
   };
 

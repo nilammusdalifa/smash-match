@@ -506,7 +506,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                         <button
                           onClick={() => {
                             soundManager.playCourtChime();
-                            soundManager.announce(`Court ${court.id} on deck: ${nextMatch.team1.player1.name}, ${nextMatch.team1.player2.name} versus ${nextMatch.team2.player1.name}, ${nextMatch.team2.player2.name}. Please warm up!`);
+                            soundManager.announce(`${court.name} on deck: ${nextMatch.team1.player1.name}, ${nextMatch.team1.player2.name} versus ${nextMatch.team2.player1.name}, ${nextMatch.team2.player2.name}. Please warm up!`);
                           }}
                           title="Alert On-Deck Players"
                           className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition-all cursor-pointer"

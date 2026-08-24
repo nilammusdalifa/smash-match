@@ -129,7 +129,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       roundNumber: Math.max(...session.matches.map((m) => m.roundNumber), 0) + 1,
       matchNumber: session.matches.length + 1,
       courtId: customCourt,
-      courtName: `Court ${customCourt}`,
+      courtName: session.courts.find((c) => c.id === customCourt)?.name || `Court ${customCourt}`,
       team1: { player1: p1, player2: p2 },
       team2: { player1: p3, player2: p4 },
       score: {

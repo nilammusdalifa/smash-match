@@ -294,6 +294,49 @@ export default function App() {
     persistSession(nextSession);
   };
 
+  // Start a freshly-suggested balanced foursome directly on an idle court.
+  const handleStartSuggestedMatch = (
+    courtId: string,
+    playerIds: [string, string, string, string]
+  ) => {
+    if (!session) return;
+    const byId = new Map<string, Player>(session.players.map((p) => [p.id, p]));
+    const four = playerIds.map((id) => byId.get(id));
+    if (four.some((p) => !p)) return;
+    const [p1, p2, p3, p4] = four as Player[];
+
+    const court = session.courts.find((c) => c.id === courtId);
+    const newMatch: Match = {
+      id: generateId(),
+      roundNumber: Math.max(...session.matches.map((m) => m.roundNumber), 0) + 1,
+      matchNumber: session.matches.length + 1,
+      courtId,
+      courtName: court?.name || `Court ${courtId}`,
+      team1: { player1: p1, player2: p2 },
+      team2: { player1: p3, player2: p4 },
+      score: { team1Score: 0, team2Score: 0, isCompleted: false, history: [] },
+      status: 'in_progress',
+      startTime: Date.now(),
+    };
+
+    const nextSession: TournamentSession = {
+      ...session,
+      matches: [...session.matches, newMatch],
+      courts: session.courts.map((c) => (c.id === courtId ? { ...c, currentMatchId: newMatch.id } : c)),
+    };
+    setSession(nextSession);
+    persistSession(nextSession);
+
+    soundManager.playCourtChime();
+    addNotification(
+      'Match Starting',
+      `${newMatch.courtName}: ${p1.name} & ${p2.name} vs ${p3.name} & ${p4.name}`,
+      newMatch.courtName!,
+      'match_start',
+      `Match starting on ${newMatch.courtName}. ${p1.name} and ${p2.name} versus ${p3.name} and ${p4.name}. Ready, play!`
+    );
+  };
+
   // Edit a player's skill tier. Also re-balances every not-yet-played match
   // against the new tier — matches already completed or in progress are left
   // alone, since the game already happened under the old assumption.
@@ -513,6 +556,7 @@ export default function App() {
             onStartMatch={handleStartMatch}
             onOpenScorekeeper={handleOpenScorekeeper}
             onQuickAssignNextMatch={handleQuickAssignNextMatch}
+            onStartSuggestedMatch={handleStartSuggestedMatch}
             readOnly={isReadOnlyPlayer}
           />
         )}

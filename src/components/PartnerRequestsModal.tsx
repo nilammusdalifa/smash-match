@@ -1,12 +1,65 @@
-import React, { useState } from 'react';
-import { TournamentSession } from '../types/badminton';
-import { X, Plus, Trash2, HeartHandshake } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Player, TournamentSession } from '../types/badminton';
+import { X, Plus, Trash2, HeartHandshake, ChevronDown } from 'lucide-react';
 
 interface PartnerRequestsModalProps {
   session: TournamentSession;
   onSetRequestedPairs: (pairs: Array<[string, string]>) => void;
   onClose: () => void;
 }
+
+interface PlayerPickerProps {
+  players: Player[];
+  value: string;
+  onChange: (id: string) => void;
+}
+
+const PlayerPicker: React.FC<PlayerPickerProps> = ({ players, value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = players.find((p) => p.id === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex-1">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-1 bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 cursor-pointer"
+      >
+        <span className="truncate">{selected?.name || 'Pick a player'}</span>
+        <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-xl bg-slate-900 border border-slate-700 shadow-xl z-10">
+          {players.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => {
+                onChange(p.id);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3 py-2 text-xs cursor-pointer hover:bg-slate-800 ${
+                p.id === value ? 'text-emerald-300' : 'text-slate-200'
+              }`}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const PartnerRequestsModal: React.FC<PartnerRequestsModalProps> = ({
   session,
@@ -48,25 +101,9 @@ export const PartnerRequestsModal: React.FC<PartnerRequestsModalProps> = ({
 
         <div className="p-5 space-y-3 overflow-y-auto min-h-0">
           <div className="flex items-center gap-2">
-            <select
-              value={a}
-              onChange={(e) => setA(e.target.value)}
-              className="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
-            >
-              {session.players.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <PlayerPicker players={session.players} value={a} onChange={setA} />
             <span className="text-slate-500 text-xs">+</span>
-            <select
-              value={b}
-              onChange={(e) => setB(e.target.value)}
-              className="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
-            >
-              {session.players.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <PlayerPicker players={session.players} value={b} onChange={setB} />
             <button
               onClick={handleAdd}
               className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer"

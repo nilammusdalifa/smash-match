@@ -17,11 +17,18 @@ export const DEFAULT_RULES: GameRules = {
 export const DEFAULT_PLAYERS: Player[] = [
   { id: 'p1', name: 'Raden', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
   { id: 'p2', name: 'Nilam', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
-  { id: 'p3', name: 'Fahmi', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
-  { id: 'p4', name: 'Eric', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
-  { id: 'p5', name: 'Novi', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
-  { id: 'p6', name: 'Bernard', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
-  { id: 'p7', name: 'Marvin', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
+  { id: 'p3', name: 'Eric', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
+  { id: 'p4', name: 'Fahmi', initialRating: 1100, currentRating: 1100, skillLevel: 'C', active: true },
+  { id: 'p5', name: 'Novi', initialRating: 1100, currentRating: 1100, skillLevel: 'C', active: true },
+  { id: 'p6', name: 'Wiznu', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
+  { id: 'p7', name: 'Jody', initialRating: 1150, currentRating: 1150, skillLevel: 'B', active: true },
+  { id: 'p8', name: 'Marvin', initialRating: 1150, currentRating: 1150, skillLevel: 'B', active: true },
+  { id: 'p9', name: 'Milton', initialRating: 1100, currentRating: 1100, skillLevel: 'C', active: true },
+  { id: 'p10', name: 'Gerry', initialRating: 1150, currentRating: 1150, skillLevel: 'B', active: true },
+  { id: 'p11', name: 'Lily', initialRating: 1100, currentRating: 1100, skillLevel: 'C', active: true },
+  { id: 'p12', name: 'Yuda', initialRating: 1200, currentRating: 1200, skillLevel: 'A', active: true },
+  { id: 'p13', name: 'Rita', initialRating: 1100, currentRating: 1100, skillLevel: 'C', active: true },
+  { id: 'p14', name: 'Vincent', initialRating: 1100, currentRating: 1100, skillLevel: 'C', active: true },
 ];
 
 function generateSessionPin(): string {

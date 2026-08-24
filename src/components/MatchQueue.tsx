@@ -146,19 +146,16 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     soundManager.playCourtChime();
   };
 
-  // Smart Balanced Matchmaking suggestion — picks 4 available players and
-  // splits them into the fairest possible teams (tier first, rating as the
-  // tiebreak), the same balancing rule the auto-generated schedule uses.
+  // Smart Balanced Matchmaking suggestion — picks 4 players and splits them
+  // into the fairest possible teams (tier first, rating as the tiebreak),
+  // the same balancing rule the auto-generated schedule uses. Doesn't
+  // exclude players currently on court: Custom Match is commonly used to
+  // queue up the NEXT match while the current one is still being played,
+  // so today's "busy" players will be free by the time this one starts.
   const handleAutoBalanceCustom = () => {
-    // Players already on court right now can't be double-booked into a new match
-    const busyPlayerIds = new Set(
-      session.matches
-        .filter((m) => m.status === 'in_progress')
-        .flatMap((m) => [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id])
-    );
-    const available = session.players.filter((p) => p.active && !busyPlayerIds.has(p.id));
+    const available = session.players.filter((p) => p.active);
     if (available.length < 4) {
-      alert('Not enough available players to auto-fill 4 (some may already be playing).');
+      alert('Not enough active players to auto-fill 4.');
       return;
     }
 
@@ -194,17 +191,11 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   };
 
   const handleReshuffleMatch = (m: Match) => {
-    // Anyone busy on another live court can't be pulled into this match —
-    // but this match's own 4 current players are fair game again since
-    // we're about to replace this exact match.
-    const busyElsewhere = new Set(
-      session.matches
-        .filter((other) => other.id !== m.id && other.status === 'in_progress')
-        .flatMap((o) => [o.team1.player1.id, o.team1.player2.id, o.team2.player1.id, o.team2.player2.id])
-    );
-    const available = session.players.filter((p) => p.active && !busyElsewhere.has(p.id));
+    // Not excluding players busy on another live court — same reasoning as
+    // Auto Fill above: this match may well be queued for after they finish.
+    const available = session.players.filter((p) => p.active);
     if (available.length < 4) {
-      alert('Not enough available players to reshuffle (some may already be playing elsewhere).');
+      alert('Not enough active players to reshuffle.');
       return;
     }
 
@@ -357,21 +348,11 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
             const team2Won = isCompleted && m.score.team2Score > m.score.team1Score;
 
             // Players eligible to fill a slot in this match's swap editor:
-            // any active player not currently busy in a DIFFERENT in-progress
-            // match (the 4 already in this match stay selectable).
+            // any active player. Not excluding players busy in another
+            // in-progress match — this match may be queued for after they
+            // finish, same reasoning as Auto Fill.
             const swapOptions = isSwapEditing
-              ? session.players.filter((p) => {
-                  if (!p.active) return false;
-                  const isCurrentlyInThisMatch = [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id].includes(p.id);
-                  if (isCurrentlyInThisMatch) return true;
-                  const busyElsewhere = session.matches.some(
-                    (o) =>
-                      o.id !== m.id &&
-                      o.status === 'in_progress' &&
-                      [o.team1.player1.id, o.team1.player2.id, o.team2.player1.id, o.team2.player2.id].includes(p.id)
-                  );
-                  return !busyElsewhere;
-                })
+              ? session.players.filter((p) => p.active)
               : [];
 
             return (

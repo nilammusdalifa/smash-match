@@ -54,6 +54,9 @@ export interface Court {
   isActive: boolean;
   currentMatchId?: string;
   nextMatchId?: string;
+  /** Reserved for the deferred time-model plan. Not read by any logic yet. */
+  availableFrom?: string;  // "HH:MM"
+  availableUntil?: string; // "HH:MM"
 }
 
 export interface GameRules {

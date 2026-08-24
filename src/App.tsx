@@ -303,7 +303,7 @@ export default function App() {
       p.id === playerId ? { ...p, skillLevel: tier } : p
     );
     const sessionWithTier = { ...session, players: updatedPlayers };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithTier, session.courtCount);
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithTier);
     const nextSession: TournamentSession = { ...sessionWithTier, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
@@ -326,7 +326,7 @@ export default function App() {
       active: true,
     };
     const sessionWithPlayer = { ...session, players: [...session.players, newPlayer] };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPlayer, session.courtCount);
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPlayer);
     const nextSession: TournamentSession = { ...sessionWithPlayer, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
@@ -352,7 +352,7 @@ export default function App() {
     });
 
     const sessionWithCourts = { ...session, courtCount: newCount, courts: newCourts };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithCourts, newCount);
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithCourts);
     const nextSession: TournamentSession = { ...sessionWithCourts, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);

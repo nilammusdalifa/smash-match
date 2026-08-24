@@ -1,5 +1,5 @@
 import { TournamentSession, Player, GameRules } from '../types/badminton';
-import { generateRotatingDoublesSchedule, initializeCourts } from './scheduler';
+import { generateRotatingDoublesSchedule, initializeCourts, CourtConfig } from './scheduler';
 import { auth, database } from './firebase';
 import { ref, set, onValue, off } from 'firebase/database';
 
@@ -103,10 +103,11 @@ export function createNewSession(
   name: string = 'Friday Night Social Doubles',
   players: Player[] = DEFAULT_PLAYERS,
   courtCount: number = 1,
-  rules: GameRules = DEFAULT_RULES
+  rules: GameRules = DEFAULT_RULES,
+  courtConfigs?: CourtConfig[]
 ): TournamentSession {
-  const courts = initializeCourts(courtCount);
-  const { matches, totalRounds } = generateRotatingDoublesSchedule(players, courtCount, rules);
+  const courts = initializeCourts(courtCount, courtConfigs);
+  const { matches, totalRounds } = generateRotatingDoublesSchedule(players, courts, rules);
 
   const newSession: TournamentSession = {
     id: 'session_' + Date.now(),

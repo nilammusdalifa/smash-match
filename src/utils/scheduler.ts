@@ -271,7 +271,7 @@ export function pickBestAvailableFoursome(
  */
 function generateGeneralRounds(
   activePlayers: Player[],
-  courtCount: number,
+  courts: Court[],
   startRound: number,
   roundsToGenerate: number,
   historyMatches: Match[],
@@ -300,7 +300,7 @@ function generateGeneralRounds(
       return Math.random() - 0.5;
     });
 
-    const matchesPerRound = Math.min(courtCount, Math.floor(n / 4));
+    const matchesPerRound = Math.min(courts.length, Math.floor(n / 4));
     const playersInRoundCount = matchesPerRound * 4;
 
     // Whoever has played strictly fewer games than the round's cutoff MUST
@@ -360,13 +360,13 @@ function generateGeneralRounds(
         });
       });
 
-      const assignedCourt = ((m % courtCount) + 1).toString();
+      const court = courts[m % courts.length];
       roundMatches.push({
         id: generateId(),
         roundNumber: r,
         matchNumber: matchNum++,
-        courtId: assignedCourt,
-        courtName: `Court ${assignedCourt}`,
+        courtId: court.id,
+        courtName: court.name,
         team1: { player1: best.t1[0], player2: best.t1[1] },
         team2: { player1: best.t2[0], player2: best.t2[1] },
         score: {
@@ -400,13 +400,12 @@ function generateGeneralRounds(
  * progress are left untouched; only 'scheduled' matches are replaced.
  */
 export function regenerateRemainingSchedule(
-  session: TournamentSession,
-  courtCount: number
+  session: TournamentSession
 ): { matches: Match[]; totalRounds: number } {
   const activePlayers = session.players.filter((p) => p.active);
   const lockedMatches = session.matches.filter((m) => m.status !== 'scheduled');
 
-  if (activePlayers.length < 4) {
+  if (activePlayers.length < 4 || session.courts.length === 0) {
     return { matches: lockedMatches, totalRounds: session.totalRounds };
   }
 
@@ -418,7 +417,7 @@ export function regenerateRemainingSchedule(
 
   const newMatches = generateGeneralRounds(
     activePlayers,
-    courtCount,
+    session.courts,
     nextRound,
     roundsToGenerate,
     lockedMatches,
@@ -438,34 +437,46 @@ export function regenerateRemainingSchedule(
  */
 export function generateRotatingDoublesSchedule(
   players: Player[],
-  courtCount: number = 1,
+  courts: Court[],
   _rules: GameRules
 ): { matches: Match[]; totalRounds: number } {
   const activePlayers = players.filter((p) => p.active);
   const n = activePlayers.length;
 
-  if (n < 4) {
+  if (n < 4 || courts.length === 0) {
     return { matches: [], totalRounds: 0 };
   }
 
   // General Algorithmic Generator for arbitrary N players (e.g., 4, 6, 7, 8, 10, 12, 16, etc.)
   // Uses greedy matching to maximize distinct partner pairs & balanced rest
   const desiredRounds = Math.min(10, Math.max(5, n));
-  const matches = generateGeneralRounds(activePlayers, courtCount, 1, desiredRounds, [], 1);
+  const matches = generateGeneralRounds(activePlayers, courts, 1, desiredRounds, [], 1);
 
   return { matches, totalRounds: desiredRounds };
 }
 
+export interface CourtConfig {
+  name: string;
+  availableFrom?: string;
+  availableUntil?: string;
+}
+
 /**
- * Initialize Courts
+ * Court ids stay "1".."N" (stable keys the rest of the app already uses);
+ * only the display name is configurable, so a venue's real court numbers
+ * ("Court 6") survive into match cards and announcements.
  */
-export function initializeCourts(courtCount: number): Court[] {
+export function initializeCourts(courtCount: number, configs?: CourtConfig[]): Court[] {
+  const total = configs && configs.length > 0 ? configs.length : courtCount;
   const courts: Court[] = [];
-  for (let i = 1; i <= courtCount; i++) {
+  for (let i = 1; i <= total; i++) {
+    const cfg = configs?.[i - 1];
     courts.push({
       id: i.toString(),
-      name: `Court ${i}`,
+      name: cfg?.name?.trim() || `Court ${i}`,
       isActive: true,
+      availableFrom: cfg?.availableFrom,
+      availableUntil: cfg?.availableUntil,
     });
   }
   return courts;

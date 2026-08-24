@@ -223,6 +223,39 @@ function pickBestFoursome(
 }
 
 /**
+ * Builds a match around a pair who asked to play together. The pair is
+ * team1; the other two are picked so the opposing team's combined tier is
+ * as close as possible to the requested pair's, then by fewest repeat
+ * partners/opponents. The resulting tier gap may exceed the usual limit —
+ * that is the accepted cost of honoring an explicit request.
+ */
+export function pickFoursomeWithRequiredPair(
+  pair: [Player, Player],
+  candidates: Player[],
+  history: FairnessHistory
+): { four: [Player, Player, Player, Player]; split: TeamSplit } {
+  const pairTier = tierScore(pair[0]) + tierScore(pair[1]);
+  let best: { four: [Player, Player, Player, Player]; split: TeamSplit; score: number } | null = null;
+
+  for (let i = 0; i < candidates.length; i++) {
+    for (let j = i + 1; j < candidates.length; j++) {
+      const opp: [Player, Player] = [candidates[i], candidates[j]];
+      const gap = Math.abs(pairTier - (tierScore(opp[0]) + tierScore(opp[1])));
+      const split: TeamSplit = { t1: pair, t2: opp };
+      const score = gap * 1000 + scoreTeamSplit(split, history);
+      if (!best || score < best.score) {
+        best = { four: [pair[0], pair[1], opp[0], opp[1]], split, score };
+      }
+    }
+  }
+
+  if (!best) {
+    throw new Error('pickFoursomeWithRequiredPair needs at least 2 candidates');
+  }
+  return best;
+}
+
+/**
  * Public entry point for picking a single match out of a pool of available
  * players (Auto Fill, reshuffle-one-match) — same rule as the main
  * scheduler: whoever has the highest fair-share deficit must be included,
@@ -270,7 +303,8 @@ function generateGeneralRounds(
   roundsToGenerate: number,
   historyMatches: Match[],
   startMatchNumber: number,
-  sessionStart: number
+  sessionStart: number,
+  requestedPairs: Array<[string, string]> = []
 ): Match[] {
   const n = activePlayers.length;
   const matches: Match[] = [];
@@ -285,6 +319,14 @@ function generateGeneralRounds(
 
   const getPairKey = (id1: string, id2: string) => [id1, id2].sort().join('-');
   let matchNum = startMatchNumber;
+
+  // A request counts as already fulfilled if the pair has ever been
+  // teammates in real history — derived, never stored, so re-running
+  // generation (a reshuffle, another regeneration) doesn't re-request it.
+  const historyPartnerCounts = computePartnerCounts(historyMatches);
+  const outstanding = requestedPairs.filter(
+    ([a, b]) => (historyPartnerCounts.get(getPairKey(a, b)) || 0) === 0
+  );
 
   for (let r = startRound; r < startRound + roundsToGenerate; r++) {
     // Highest fair-share deficit plays first — whoever is owed the most
@@ -327,12 +369,35 @@ function generateGeneralRounds(
       const slotsNeeded = 4 - mustPlayForThisMatch.length;
       if (mustPlayForThisMatch.length + remainingTied.length < 4) break;
 
-      const { four, split: best } = pickBestFoursome(
-        mustPlayForThisMatch,
-        remainingTied,
-        slotsNeeded,
-        history
+      const eligible = [...mustPlayForThisMatch, ...remainingTied];
+      const requestIdx = outstanding.findIndex(
+        ([a, b]) => eligible.some((p) => p.id === a) && eligible.some((p) => p.id === b)
       );
+
+      let four: [Player, Player, Player, Player];
+      let best: TeamSplit;
+
+      if (requestIdx >= 0) {
+        const [aId, bId] = outstanding[requestIdx];
+        const pa = eligible.find((p) => p.id === aId)!;
+        const pb = eligible.find((p) => p.id === bId)!;
+        const candidates = eligible.filter((p) => p.id !== aId && p.id !== bId);
+        if (candidates.length >= 2) {
+          const picked = pickFoursomeWithRequiredPair([pa, pb], candidates, history);
+          four = picked.four;
+          best = picked.split;
+          outstanding.splice(requestIdx, 1);
+        } else {
+          const picked = pickBestFoursome(mustPlayForThisMatch, remainingTied, slotsNeeded, history);
+          four = picked.four;
+          best = picked.split;
+        }
+      } else {
+        const picked = pickBestFoursome(mustPlayForThisMatch, remainingTied, slotsNeeded, history);
+        four = picked.four;
+        best = picked.split;
+      }
+
       const chosenTiedIds = new Set(
         four.filter((p) => !mustPlayForThisMatch.some((mp) => mp.id === p.id)).map((p) => p.id)
       );
@@ -436,7 +501,8 @@ export function regenerateRemainingSchedule(
     roundsToGenerate,
     lockedMatches,
     nextMatchNumber,
-    session.createdAt
+    session.createdAt,
+    session.requestedPairs || []
   );
 
   return {
@@ -453,7 +519,8 @@ export function regenerateRemainingSchedule(
 export function generateRotatingDoublesSchedule(
   players: Player[],
   courts: Court[],
-  _rules: GameRules
+  _rules: GameRules,
+  requestedPairs: Array<[string, string]> = []
 ): { matches: Match[]; totalRounds: number } {
   const activePlayers = players.filter((p) => p.active);
   const n = activePlayers.length;
@@ -465,7 +532,7 @@ export function generateRotatingDoublesSchedule(
   // General Algorithmic Generator for arbitrary N players (e.g., 4, 6, 7, 8, 10, 12, 16, etc.)
   // Uses greedy matching to maximize distinct partner pairs & balanced rest
   const desiredRounds = Math.min(10, Math.max(5, n));
-  const matches = generateGeneralRounds(activePlayers, courts, 1, desiredRounds, [], 1, Date.now());
+  const matches = generateGeneralRounds(activePlayers, courts, 1, desiredRounds, [], 1, Date.now(), requestedPairs);
 
   return { matches, totalRounds: desiredRounds };
 }

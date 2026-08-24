@@ -351,6 +351,17 @@ export default function App() {
     persistSession(nextSession);
   };
 
+  // Update which pairs have asked to play together, re-balancing every
+  // not-yet-played match so a new request gets honored as early as possible.
+  const handleSetRequestedPairs = (pairs: Array<[string, string]>) => {
+    if (!session) return;
+    const sessionWithPairs = { ...session, requestedPairs: pairs };
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPairs);
+    const nextSession: TournamentSession = { ...sessionWithPairs, matches, totalRounds };
+    setSession(nextSession);
+    persistSession(nextSession);
+  };
+
   // Change how many courts the session has mid-session, re-balancing every
   // not-yet-played match against the new count (more courts means more
   // people play per round instead of resting).
@@ -488,6 +499,7 @@ export default function App() {
         onAddPlayer={handleAddPlayer}
         onUpdateCourtCount={handleUpdateCourtCount}
         onSetPlayerPresence={handleSetPlayerPresence}
+        onSetRequestedPairs={handleSetRequestedPairs}
         readOnly={isReadOnlyPlayer}
         hideSessionControls={isRemoteMode}
       />

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { TournamentSession } from '../types/badminton';
 import { soundManager } from '../utils/audio';
 import { AttendanceModal } from './AttendanceModal';
+import { PartnerRequestsModal } from './PartnerRequestsModal';
 import {
   Trophy,
   Volume2,
@@ -13,6 +14,7 @@ import {
   Users,
   UserPlus,
   UserCheck,
+  HeartHandshake,
   BarChart3,
   Calendar,
   Grid,
@@ -29,6 +31,7 @@ interface NavbarProps {
   onAddPlayer: (name: string, tier: 'A' | 'B' | 'C') => void;
   onUpdateCourtCount: (count: number) => void;
   onSetPlayerPresence: (playerId: string, present: boolean) => void;
+  onSetRequestedPairs: (pairs: Array<[string, string]>) => void;
   /** Player (view-only) mode: hides everything that mutates the session. */
   readOnly?: boolean;
   /**
@@ -49,6 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onAddPlayer,
   onUpdateCourtCount,
   onSetPlayerPresence,
+  onSetRequestedPairs,
   readOnly = false,
   hideSessionControls = false,
 }) => {
@@ -61,6 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showChangeCourts, setShowChangeCourts] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const [showAttendance, setShowAttendance] = useState<boolean>(false);
+  const [showRequests, setShowRequests] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleConfirmAddPlayer = () => {
@@ -257,6 +262,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <button
                       onClick={() => {
                         setShowMenu(false);
+                        setShowRequests(true);
+                      }}
+                      className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2"
+                    >
+                      <HeartHandshake className="w-3.5 h-3.5" />
+                      <span>Partner Requests</span>
+                    </button>
+                  )}
+                  {!hideSessionControls && (
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
                         setShowChangeCourts(true);
                       }}
                       className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2"
@@ -436,6 +453,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           session={session}
           onSetPlayerPresence={onSetPlayerPresence}
           onClose={() => setShowAttendance(false)}
+        />,
+        document.body
+      )}
+
+      {showRequests && createPortal(
+        <PartnerRequestsModal
+          session={session}
+          onSetRequestedPairs={onSetRequestedPairs}
+          onClose={() => setShowRequests(false)}
         />,
         document.body
       )}

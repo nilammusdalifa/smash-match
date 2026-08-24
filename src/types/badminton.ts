@@ -79,6 +79,8 @@ export interface TournamentSession {
   courtCount: number;
   courts: Court[];
   players: Player[];
+  /** Pairs who asked to play together; each is honored once. */
+  requestedPairs?: Array<[string, string]>;
   rules: GameRules;
   matches: Match[];
   currentRound: number;

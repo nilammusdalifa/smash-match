@@ -96,7 +96,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
   const now = Date.now();
   const busyElsewhere = new Set(
     session.matches
-      .filter((m) => m.status === 'in_progress')
+      .filter((m) => m.status === 'in_progress' || m.status === 'scheduled')
       .flatMap((m) => [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id])
   );
   const eligibleForSuggestion = presentPlayers(session.players, now, session.createdAt).filter(

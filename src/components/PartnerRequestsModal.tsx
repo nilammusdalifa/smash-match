@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Player, TournamentSession } from '../types/badminton';
 import { X, Plus, Trash2, HeartHandshake, ChevronDown } from 'lucide-react';
 
@@ -16,30 +17,59 @@ interface PlayerPickerProps {
 
 const PlayerPicker: React.FC<PlayerPickerProps> = ({ players, value, onChange }) => {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const selected = players.find((p) => p.id === value);
 
+  // The list is portaled to <body> (see render below) so the modal's own
+  // overflow-y-auto scroll area can't clip it — position it with the
+  // button's actual screen coordinates instead of relying on CSS layout.
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        listRef.current && !listRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
     };
+    const handleScroll = () => setOpen(false);
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [open]);
 
+  const handleToggle = () => {
+    if (!open && buttonRef.current) {
+      const r = buttonRef.current.getBoundingClientRect();
+      setRect({ top: r.bottom + 4, left: r.left, width: r.width });
+    }
+    setOpen((v) => !v);
+  };
+
   return (
-    <div ref={ref} className="relative flex-1">
+    <div className="flex-1">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggle}
         className="w-full flex items-center justify-between gap-1 bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 cursor-pointer"
       >
         <span className="truncate">{selected?.name || 'Pick a player'}</span>
         <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
       </button>
-      {open && (
-        <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-xl bg-slate-900 border border-slate-700 shadow-xl z-10">
+      {open && rect && createPortal(
+        <div
+          ref={listRef}
+          style={{ position: 'fixed', top: rect.top, left: rect.left, width: rect.width }}
+          className="max-h-48 overflow-y-auto rounded-xl bg-slate-900 border border-slate-700 shadow-xl z-[60]"
+        >
           {players.map((p) => (
             <button
               key={p.id}
@@ -55,7 +85,8 @@ const PlayerPicker: React.FC<PlayerPickerProps> = ({ players, value, onChange })
               {p.name}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

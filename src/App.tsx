@@ -383,8 +383,12 @@ export default function App() {
     const now = Date.now();
     const updatedPlayers = session.players.map((p) => {
       if (p.id !== playerId) return p;
+      // Always stamp the actual return time — falling back to a stale
+      // arrivedAt (or session.createdAt) here would retroactively count
+      // them present for matches during the away window they just left,
+      // handing them an unearned catch-up bonus in the fair-share math.
       return present
-        ? { ...p, arrivedAt: p.arrivedAt ?? session.createdAt, leftAt: undefined }
+        ? { ...p, arrivedAt: now, leftAt: undefined }
         : { ...p, leftAt: now };
     });
     const sessionWithPresence = { ...session, players: updatedPlayers };

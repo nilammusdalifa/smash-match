@@ -10,6 +10,10 @@ export interface Player {
   skillLevel?: 'A' | 'B' | 'C';
   active: boolean;
   notes?: string;
+  /** Undefined = present since session start. */
+  arrivedAt?: number;
+  /** Set when someone leaves early; undefined = still here. */
+  leftAt?: number;
 }
 
 export interface MatchScore {
@@ -54,6 +58,9 @@ export interface Court {
   isActive: boolean;
   currentMatchId?: string;
   nextMatchId?: string;
+  /** Reserved for the deferred time-model plan. Not read by any logic yet. */
+  availableFrom?: string;  // "HH:MM"
+  availableUntil?: string; // "HH:MM"
 }
 
 export interface GameRules {
@@ -72,6 +79,8 @@ export interface TournamentSession {
   courtCount: number;
   courts: Court[];
   players: Player[];
+  /** Pairs who asked to play together; each is honored once. */
+  requestedPairs?: Array<[string, string]>;
   rules: GameRules;
   matches: Match[];
   currentRound: number;

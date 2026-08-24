@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { TournamentSession } from '../types/badminton';
 import { soundManager } from '../utils/audio';
+import { AttendanceModal } from './AttendanceModal';
+import { PartnerRequestsModal } from './PartnerRequestsModal';
 import {
   Trophy,
   Volume2,
@@ -11,6 +13,8 @@ import {
   MoreVertical,
   Users,
   UserPlus,
+  UserCheck,
+  HeartHandshake,
   BarChart3,
   Calendar,
   Grid,
@@ -25,7 +29,9 @@ interface NavbarProps {
   onOpenNewSessionModal: () => void;
   onResetSession: () => void;
   onAddPlayer: (name: string, tier: 'A' | 'B' | 'C') => void;
-  onUpdateCourtCount: (count: number) => void;
+  onUpdateCourtCount: (count: number, courtNames?: string[]) => void;
+  onSetPlayerPresence: (playerId: string, present: boolean) => void;
+  onSetRequestedPairs: (pairs: Array<[string, string]>) => void;
   /** Player (view-only) mode: hides everything that mutates the session. */
   readOnly?: boolean;
   /**
@@ -45,6 +51,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onResetSession,
   onAddPlayer,
   onUpdateCourtCount,
+  onSetPlayerPresence,
+  onSetRequestedPairs,
   readOnly = false,
   hideSessionControls = false,
 }) => {
@@ -55,7 +63,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [newPlayerName, setNewPlayerName] = useState<string>('');
   const [newPlayerTier, setNewPlayerTier] = useState<'A' | 'B' | 'C'>('B');
   const [showChangeCourts, setShowChangeCourts] = useState<boolean>(false);
+  const [selectedCourtCount, setSelectedCourtCount] = useState<number | null>(null);
+  const [newCourtNameInputs, setNewCourtNameInputs] = useState<string[]>([]);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
+  const [showAttendance, setShowAttendance] = useState<boolean>(false);
+  const [showRequests, setShowRequests] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleConfirmAddPlayer = () => {
@@ -240,6 +252,30 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <button
                       onClick={() => {
                         setShowMenu(false);
+                        setShowAttendance(true);
+                      }}
+                      className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Who's Here</span>
+                    </button>
+                  )}
+                  {!hideSessionControls && (
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        setShowRequests(true);
+                      }}
+                      className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2"
+                    >
+                      <HeartHandshake className="w-3.5 h-3.5" />
+                      <span>Partner Requests</span>
+                    </button>
+                  )}
+                  {!hideSessionControls && (
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
                         setShowChangeCourts(true);
                       }}
                       className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-800 flex items-center space-x-2"
@@ -414,6 +450,24 @@ export const Navbar: React.FC<NavbarProps> = ({
         document.body
       )}
 
+      {showAttendance && createPortal(
+        <AttendanceModal
+          session={session}
+          onSetPlayerPresence={onSetPlayerPresence}
+          onClose={() => setShowAttendance(false)}
+        />,
+        document.body
+      )}
+
+      {showRequests && createPortal(
+        <PartnerRequestsModal
+          session={session}
+          onSetRequestedPairs={onSetRequestedPairs}
+          onClose={() => setShowRequests(false)}
+        />,
+        document.body
+      )}
+
       {/* Change Courts Modal — also portaled, see the note above. */}
       {showChangeCourts && createPortal(
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
@@ -421,7 +475,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-base font-bold text-white">Change Courts</h3>
               <button
-                onClick={() => setShowChangeCourts(false)}
+                onClick={() => {
+                  setShowChangeCourts(false);
+                  setSelectedCourtCount(null);
+                }}
                 className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
               >
                 ✕
@@ -437,11 +494,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   key={cnt}
                   onClick={() => {
-                    onUpdateCourtCount(cnt);
-                    setShowChangeCourts(false);
+                    if (cnt <= session.courtCount) {
+                      onUpdateCourtCount(cnt);
+                      setShowChangeCourts(false);
+                      setSelectedCourtCount(null);
+                    } else {
+                      // Adding courts — collect a name for each new one
+                      // before applying, so "Court 8" doesn't end up as a
+                      // generic "Court 2".
+                      setSelectedCourtCount(cnt);
+                      setNewCourtNameInputs(Array.from({ length: cnt - session.courtCount }, () => ''));
+                    }
                   }}
                   className={`py-2.5 rounded-xl font-bold text-xs border transition-all cursor-pointer ${
-                    session.courtCount === cnt
+                    (selectedCourtCount ?? session.courtCount) === cnt
                       ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950'
                       : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white'
                   }`}
@@ -450,9 +516,46 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               ))}
             </div>
+
+            {selectedCourtCount !== null && selectedCourtCount > session.courtCount && (
+              <div className="space-y-2 pt-1">
+                <p className="text-[11px] text-slate-400">
+                  Name the new court{newCourtNameInputs.length > 1 ? 's' : ''}:
+                </p>
+                {newCourtNameInputs.map((val, i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    value={val}
+                    onChange={(e) =>
+                      setNewCourtNameInputs((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
+                    }
+                    placeholder={`Court ${session.courtCount + i + 1}`}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  />
+                ))}
+                <button
+                  onClick={() => {
+                    const fullNames = Array.from({ length: selectedCourtCount }, (_, i) =>
+                      i < session.courtCount ? '' : newCourtNameInputs[i - session.courtCount] || ''
+                    );
+                    onUpdateCourtCount(selectedCourtCount, fullNames);
+                    setShowChangeCourts(false);
+                    setSelectedCourtCount(null);
+                  }}
+                  className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+
             <div className="flex items-center justify-end pt-2 border-t border-slate-800">
               <button
-                onClick={() => setShowChangeCourts(false)}
+                onClick={() => {
+                  setShowChangeCourts(false);
+                  setSelectedCourtCount(null);
+                }}
                 className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
               >
                 Close

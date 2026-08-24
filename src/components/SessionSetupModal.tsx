@@ -24,6 +24,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
 }) => {
   const [name, setName] = useState<string>('Friday Night Social Doubles');
   const [courtCount, setCourtCount] = useState<number>(1);
+  const [courtNames, setCourtNames] = useState<string[]>([]);
   const [pointsToWin, setPointsToWin] = useState<number>(30);
   const [maxPointsCap, setMaxPointsCap] = useState<number>(30);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -80,6 +81,16 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
     setBulkText('');
   };
 
+  const courtNameAt = (i: number) => courtNames[i] ?? `Court ${i + 1}`;
+  const setCourtNameAt = (i: number, value: string) => {
+    setCourtNames((prev) => {
+      const next = [...prev];
+      while (next.length < courtCount) next.push(`Court ${next.length + 1}`);
+      next[i] = value;
+      return next;
+    });
+  };
+
   const handleStartTournament = () => {
     if (players.length < 4) {
       alert('A minimum of 4 players is required for doubles badminton.');
@@ -98,7 +109,8 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
       name.trim() || 'Badminton Doubles Session',
       players,
       courtCount,
-      rules
+      rules,
+      Array.from({ length: courtCount }, (_, i) => ({ name: courtNameAt(i) }))
     );
 
     onSessionCreated(newSession);
@@ -175,6 +187,18 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
             <p className="text-[11px] text-slate-400">
               Use 1 court for a single rotation, or more for bigger groups.
             </p>
+            <div className="space-y-2">
+              {Array.from({ length: courtCount }, (_, i) => (
+                <input
+                  key={i}
+                  type="text"
+                  value={courtNameAt(i)}
+                  onChange={(e) => setCourtNameAt(i, e.target.value)}
+                  placeholder={`Court ${i + 1}`}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                />
+              ))}
+            </div>
           </div>
 
           {/* Scoring Rules */}

@@ -226,12 +226,13 @@ export default function App() {
     const matchIdx = session.matches.findIndex((m) => m.id === matchId);
     if (matchIdx < 0) return;
 
+    const court = session.courts.find((c) => c.id === courtId);
     const targetMatch = {
       ...session.matches[matchIdx],
       status: 'in_progress' as const,
       startTime: Date.now(),
       courtId,
-      courtName: `Court ${courtId}`,
+      courtName: court?.name || `Court ${courtId}`,
     };
 
     const updatedCourts = session.courts.map((c) => {
@@ -257,12 +258,13 @@ export default function App() {
     const p3 = targetMatch.team2.player1.name;
     const p4 = targetMatch.team2.player2.name;
 
+    const courtLabel = court?.name || `Court ${courtId}`;
     addNotification(
       'Match Starting',
-      `Court ${courtId}: ${p1} & ${p2} vs ${p3} & ${p4}`,
-      `Court ${courtId}`,
+      `${courtLabel}: ${p1} & ${p2} vs ${p3} & ${p4}`,
+      courtLabel,
       'match_start',
-      `Match starting on Court ${courtId}. ${p1} and ${p2} versus ${p3} and ${p4}. Ready, play!`
+      `Match starting on ${courtLabel}. ${p1} and ${p2} versus ${p3} and ${p4}. Ready, play!`
     );
   };
 
@@ -294,6 +296,49 @@ export default function App() {
     persistSession(nextSession);
   };
 
+  // Start a freshly-suggested balanced foursome directly on an idle court.
+  const handleStartSuggestedMatch = (
+    courtId: string,
+    playerIds: [string, string, string, string]
+  ) => {
+    if (!session) return;
+    const byId = new Map<string, Player>(session.players.map((p) => [p.id, p]));
+    const four = playerIds.map((id) => byId.get(id));
+    if (four.some((p) => !p)) return;
+    const [p1, p2, p3, p4] = four as Player[];
+
+    const court = session.courts.find((c) => c.id === courtId);
+    const newMatch: Match = {
+      id: generateId(),
+      roundNumber: Math.max(...session.matches.map((m) => m.roundNumber), 0) + 1,
+      matchNumber: session.matches.length + 1,
+      courtId,
+      courtName: court?.name || `Court ${courtId}`,
+      team1: { player1: p1, player2: p2 },
+      team2: { player1: p3, player2: p4 },
+      score: { team1Score: 0, team2Score: 0, isCompleted: false, history: [] },
+      status: 'in_progress',
+      startTime: Date.now(),
+    };
+
+    const nextSession: TournamentSession = {
+      ...session,
+      matches: [...session.matches, newMatch],
+      courts: session.courts.map((c) => (c.id === courtId ? { ...c, currentMatchId: newMatch.id } : c)),
+    };
+    setSession(nextSession);
+    persistSession(nextSession);
+
+    soundManager.playCourtChime();
+    addNotification(
+      'Match Starting',
+      `${newMatch.courtName}: ${p1.name} & ${p2.name} vs ${p3.name} & ${p4.name}`,
+      newMatch.courtName!,
+      'match_start',
+      `Match starting on ${newMatch.courtName}. ${p1.name} and ${p2.name} versus ${p3.name} and ${p4.name}. Ready, play!`
+    );
+  };
+
   // Edit a player's skill tier. Also re-balances every not-yet-played match
   // against the new tier — matches already completed or in progress are left
   // alone, since the game already happened under the old assumption.
@@ -303,7 +348,7 @@ export default function App() {
       p.id === playerId ? { ...p, skillLevel: tier } : p
     );
     const sessionWithTier = { ...session, players: updatedPlayers };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithTier, session.courtCount);
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithTier);
     const nextSession: TournamentSession = { ...sessionWithTier, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
@@ -326,8 +371,42 @@ export default function App() {
       active: true,
     };
     const sessionWithPlayer = { ...session, players: [...session.players, newPlayer] };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPlayer, session.courtCount);
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPlayer);
     const nextSession: TournamentSession = { ...sessionWithPlayer, matches, totalRounds };
+    setSession(nextSession);
+    persistSession(nextSession);
+  };
+
+  // Mark someone as here / not here yet. Everyone is present by default, so
+  // this is only used for the exceptions (late arrivals, early leavers), and
+  // it re-balances every match that hasn't been played yet.
+  const handleSetPlayerPresence = (playerId: string, present: boolean) => {
+    if (!session) return;
+    const now = Date.now();
+    const updatedPlayers = session.players.map((p) => {
+      if (p.id !== playerId) return p;
+      // Always stamp the actual return time — falling back to a stale
+      // arrivedAt (or session.createdAt) here would retroactively count
+      // them present for matches during the away window they just left,
+      // handing them an unearned catch-up bonus in the fair-share math.
+      return present
+        ? { ...p, arrivedAt: now, leftAt: undefined }
+        : { ...p, leftAt: now };
+    });
+    const sessionWithPresence = { ...session, players: updatedPlayers };
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPresence);
+    const nextSession: TournamentSession = { ...sessionWithPresence, matches, totalRounds };
+    setSession(nextSession);
+    persistSession(nextSession);
+  };
+
+  // Update which pairs have asked to play together, re-balancing every
+  // not-yet-played match so a new request gets honored as early as possible.
+  const handleSetRequestedPairs = (pairs: Array<[string, string]>) => {
+    if (!session) return;
+    const sessionWithPairs = { ...session, requestedPairs: pairs };
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPairs);
+    const nextSession: TournamentSession = { ...sessionWithPairs, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
   };
@@ -335,7 +414,7 @@ export default function App() {
   // Change how many courts the session has mid-session, re-balancing every
   // not-yet-played match against the new count (more courts means more
   // people play per round instead of resting).
-  const handleUpdateCourtCount = (newCount: number) => {
+  const handleUpdateCourtCount = (newCount: number, newCourtNames?: string[]) => {
     if (!session || newCount < 1) return;
 
     // Refuse to drop a court that's mid-match — nothing to safely do with
@@ -346,13 +425,21 @@ export default function App() {
       return;
     }
 
+    // Existing courts keep their own name unless a different one was typed;
+    // a brand-new court gets the name typed for it (e.g. "Court 8" when
+    // going from 1 court to 2), or "Court N" if none was given.
     const newCourts = Array.from({ length: newCount }, (_, i) => {
       const id = (i + 1).toString();
-      return session.courts.find((c) => c.id === id) || { id, name: `Court ${id}`, isActive: true };
+      const existing = session.courts.find((c) => c.id === id);
+      const typedName = newCourtNames?.[i]?.trim();
+      if (existing) {
+        return typedName ? { ...existing, name: typedName } : existing;
+      }
+      return { id, name: typedName || `Court ${id}`, isActive: true };
     });
 
     const sessionWithCourts = { ...session, courtCount: newCount, courts: newCourts };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithCourts, newCount);
+    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithCourts);
     const nextSession: TournamentSession = { ...sessionWithCourts, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
@@ -468,6 +555,8 @@ export default function App() {
         onResetSession={handleResetSession}
         onAddPlayer={handleAddPlayer}
         onUpdateCourtCount={handleUpdateCourtCount}
+        onSetPlayerPresence={handleSetPlayerPresence}
+        onSetRequestedPairs={handleSetRequestedPairs}
         readOnly={isReadOnlyPlayer}
         hideSessionControls={isRemoteMode}
       />
@@ -481,6 +570,7 @@ export default function App() {
             onStartMatch={handleStartMatch}
             onOpenScorekeeper={handleOpenScorekeeper}
             onQuickAssignNextMatch={handleQuickAssignNextMatch}
+            onStartSuggestedMatch={handleStartSuggestedMatch}
             readOnly={isReadOnlyPlayer}
           />
         )}

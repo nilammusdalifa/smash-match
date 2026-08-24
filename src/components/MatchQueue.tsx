@@ -22,8 +22,8 @@ import {
   computeCarryHistory,
   computePartnerCounts,
   computeOpponentCounts,
-  computeGamesPlayed,
 } from '../utils/scheduler';
+import { computeFairShare } from '../utils/fairness';
 
 interface MatchQueueProps {
   session: TournamentSession;
@@ -129,7 +129,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       roundNumber: Math.max(...session.matches.map((m) => m.roundNumber), 0) + 1,
       matchNumber: session.matches.length + 1,
       courtId: customCourt,
-      courtName: `Court ${customCourt}`,
+      courtName: session.courts.find((c) => c.id === customCourt)?.name || `Court ${customCourt}`,
       team1: { player1: p1, player2: p2 },
       team2: { player1: p3, player2: p4 },
       score: {
@@ -159,18 +159,18 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       return;
     }
 
-    // Real match history (completed + in-progress) drives fairness: fewest
-    // games played must play, and who fills the rest (when several people
-    // are tied) is chosen for tier balance and carry fairness — same rules
-    // the auto-generated schedule uses.
+    // Real match history (completed + in-progress) drives fairness: whoever
+    // has the highest fair-share deficit must play, and who fills the rest
+    // (when several people are tied) is chosen for tier balance and carry
+    // fairness — same rules the auto-generated schedule uses.
     const historyMatches = session.matches.filter((m) => m.status !== 'scheduled');
-    const gamesPlayed = computeGamesPlayed(historyMatches);
+    const fairShare = computeFairShare(historyMatches, session.players, session.createdAt);
     const carryHistory = computeCarryHistory(historyMatches);
     const partnerCounts = computePartnerCounts(historyMatches);
     const opponentCounts = computeOpponentCounts(historyMatches);
 
     const { split: best } = pickBestAvailableFoursome(available, {
-      gamesPlayed,
+      fairShare,
       partnerCounts,
       opponentCounts,
       carryHistory,
@@ -200,13 +200,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     }
 
     const historyMatches = session.matches.filter((o) => o.id !== m.id && o.status !== 'scheduled');
-    const gamesPlayed = computeGamesPlayed(historyMatches);
+    const fairShare = computeFairShare(historyMatches, session.players, session.createdAt);
     const carryHistory = computeCarryHistory(historyMatches);
     const partnerCounts = computePartnerCounts(historyMatches);
     const opponentCounts = computeOpponentCounts(historyMatches);
 
     const { split: best } = pickBestAvailableFoursome(available, {
-      gamesPlayed,
+      fairShare,
       partnerCounts,
       opponentCounts,
       carryHistory,

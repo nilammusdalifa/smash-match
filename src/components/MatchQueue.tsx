@@ -23,7 +23,7 @@ import {
   computePartnerCounts,
   computeOpponentCounts,
 } from '../utils/scheduler';
-import { computeFairShare } from '../utils/fairness';
+import { computeFairShare, presentPlayers } from '../utils/fairness';
 
 interface MatchQueueProps {
   session: TournamentSession;
@@ -149,13 +149,15 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   // Smart Balanced Matchmaking suggestion — picks 4 players and splits them
   // into the fairest possible teams (tier first, rating as the tiebreak),
   // the same balancing rule the auto-generated schedule uses. Doesn't
-  // exclude players currently on court: Custom Match is commonly used to
-  // queue up the NEXT match while the current one is still being played,
-  // so today's "busy" players will be free by the time this one starts.
+  // exclude players currently on court, or already queued in some other
+  // scheduled match: Custom Match is commonly used to queue up a match for
+  // after the current rotation, so today's "busy" players will be free by
+  // the time this one starts. It DOES exclude away players — no amount of
+  // "will be free soon" reasoning applies to someone who isn't here.
   const handleAutoBalanceCustom = () => {
-    const available = session.players.filter((p) => p.active);
+    const available = presentPlayers(session.players, Date.now(), session.createdAt);
     if (available.length < 4) {
-      alert('Not enough active players to auto-fill 4.');
+      alert('Not enough present players to auto-fill 4.');
       return;
     }
 
@@ -191,11 +193,12 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   };
 
   const handleReshuffleMatch = (m: Match) => {
-    // Not excluding players busy on another live court — same reasoning as
-    // Auto Fill above: this match may well be queued for after they finish.
-    const available = session.players.filter((p) => p.active);
+    // Not excluding players busy on another live court or in another
+    // scheduled match — same reasoning as Auto Fill above. Does exclude
+    // away players.
+    const available = presentPlayers(session.players, Date.now(), session.createdAt);
     if (available.length < 4) {
-      alert('Not enough active players to reshuffle.');
+      alert('Not enough present players to reshuffle.');
       return;
     }
 
@@ -229,7 +232,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   };
 
   const handleDeleteMatchClick = (m: Match) => {
-    if (confirm('Remove this match? The 4 players will just sit out this round.')) {
+    const warning =
+      m.status === 'completed'
+        ? 'Delete this completed match? Its score will be erased and everyone\'s rating will be recalculated as if it never happened.'
+        : m.status === 'in_progress'
+        ? 'Delete this in-progress match? The court will be freed up and the 4 players will just sit out this round.'
+        : 'Remove this match? The 4 players will just sit out this round.';
+    if (confirm(warning)) {
       onDeleteMatch(m.id);
     }
   };
@@ -348,11 +357,11 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
             const team2Won = isCompleted && m.score.team2Score > m.score.team1Score;
 
             // Players eligible to fill a slot in this match's swap editor:
-            // any active player. Not excluding players busy in another
-            // in-progress match — this match may be queued for after they
-            // finish, same reasoning as Auto Fill.
+            // present players. Not excluding players busy in another
+            // scheduled or in-progress match — this match may be queued for
+            // after they finish, same reasoning as Auto Fill.
             const swapOptions = isSwapEditing
-              ? session.players.filter((p) => p.active)
+              ? presentPlayers(session.players, Date.now(), session.createdAt)
               : [];
 
             return (
@@ -551,7 +560,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                       </>
                     ) : (
                       <>
-                        {/* Swap / Delete — only meaningful before a match has started */}
+                        {/* Swap — only meaningful before a match has started */}
                         {isScheduled && (
                           <>
                             <button
@@ -569,6 +578,19 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </>
+                        )}
+
+                        {/* Delete — for a live or completed match too, e.g. a
+                            mis-entered Custom Match. Ratings get rebuilt from
+                            scratch afterward, so this stays safe to use. */}
+                        {!isScheduled && (
+                          <button
+                            onClick={() => handleDeleteMatchClick(m)}
+                            title="Delete this match"
+                            className="p-2.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 text-xs border border-slate-700 hover:border-rose-500/40 cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         )}
 
                         {/* Quick Edit Score Button */}

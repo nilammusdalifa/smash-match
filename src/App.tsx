@@ -14,7 +14,7 @@ import {
   pushSessionOwnershipToFirebase
 } from './utils/storage';
 import { auth, ensureAnonymousAuth } from './utils/firebase';
-import { calculateDoublesEloChange } from './utils/ranking';
+import { recomputeAllRatings } from './utils/ranking';
 import { generateId, regenerateRemainingSchedule } from './utils/scheduler';
 import { soundManager } from './utils/audio';
 import { Navbar } from './components/Navbar';
@@ -154,60 +154,47 @@ export default function App() {
       winnerTeamId: isCompleted ? (team1Score > team2Score ? 1 : 2) : undefined,
     };
 
-    if (isCompleted && !wasCompleted) {
+    const becameCompleted = !!isCompleted && !wasCompleted;
+    if (becameCompleted) {
       targetMatch.status = 'completed';
       targetMatch.endTime = Date.now();
       if (targetMatch.startTime) {
         targetMatch.durationSeconds = Math.max(1, Math.floor((Date.now() - targetMatch.startTime) / 1000));
       }
+    }
 
-      // Elo Rating Updates
-      const { team1Delta, team2Delta } = calculateDoublesEloChange(
-        [targetMatch.team1.player1, targetMatch.team1.player2],
-        [targetMatch.team2.player1, targetMatch.team2.player2],
-        team1Score,
-        team2Score
-      );
-
-      // Update player rating copy in session
-      const updatedPlayers = session.players.map((p) => {
-        if (p.id === targetMatch.team1.player1.id || p.id === targetMatch.team1.player2.id) {
-          return { ...p, currentRating: Math.max(100, p.currentRating + team1Delta) };
-        }
-        if (p.id === targetMatch.team2.player1.id || p.id === targetMatch.team2.player2.id) {
-          return { ...p, currentRating: Math.max(100, p.currentRating + team2Delta) };
-        }
-        return p;
-      });
-
-      // Update court status (clear active match from court)
-      const updatedCourts = session.courts.map((c) => {
-        if (c.currentMatchId === matchId) {
-          return { ...c, currentMatchId: undefined };
-        }
-        return c;
-      });
+    // Either a fresh completion or a correction to an already-completed
+    // match's score — either way, ratings must reflect the final recorded
+    // score. Rebuilt from scratch (see recomputeAllRatings) rather than
+    // patched with a single delta, since Elo is order-dependent.
+    if (becameCompleted || (isCompleted && wasCompleted)) {
+      const nextMatches = session.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m));
+      const updatedPlayers = recomputeAllRatings(session.players, nextMatches);
+      const updatedCourts = becameCompleted
+        ? session.courts.map((c) => (c.currentMatchId === matchId ? { ...c, currentMatchId: undefined } : c))
+        : session.courts;
 
       const nextSession: TournamentSession = {
         ...session,
         players: updatedPlayers,
         courts: updatedCourts,
-        matches: session.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m)),
+        matches: nextMatches,
       };
 
       setSession(nextSession);
       persistSession(nextSession);
 
-      // Trigger notification
-      const winTeam = team1Score > team2Score ? targetMatch.team1 : targetMatch.team2;
-      const winNames = `${winTeam.player1.name} & ${winTeam.player2.name}`;
-      addNotification(
-        'Match Concluded',
-        `${winNames} won ${Math.max(team1Score, team2Score)}-${Math.min(team1Score, team2Score)}`,
-        targetMatch.courtName || 'Court 1',
-        'match_completed',
-        `Match finished on ${targetMatch.courtName || 'Court 1'}. Winners: ${winNames}.`
-      );
+      if (becameCompleted) {
+        const winTeam = team1Score > team2Score ? targetMatch.team1 : targetMatch.team2;
+        const winNames = `${winTeam.player1.name} & ${winTeam.player2.name}`;
+        addNotification(
+          'Match Concluded',
+          `${winNames} won ${Math.max(team1Score, team2Score)}-${Math.min(team1Score, team2Score)}`,
+          targetMatch.courtName || 'Court 1',
+          'match_completed',
+          `Match finished on ${targetMatch.courtName || 'Court 1'}. Winners: ${winNames}.`
+        );
+      }
       return;
     }
 
@@ -445,15 +432,26 @@ export default function App() {
     persistSession(nextSession);
   };
 
-  // Remove a not-yet-played match. The 4 freed-up players simply sit out
-  // that round — nothing else in the schedule shifts.
+  // Remove any match — scheduled (freed-up players just sit out that round),
+  // in-progress (e.g. a mis-entered Custom Match), or completed (e.g. a
+  // wrong score that was already saved). Ratings are rebuilt from scratch
+  // afterward since Elo is order-dependent — see recomputeAllRatings.
   const handleDeleteMatch = (matchId: string) => {
     if (!session) return;
     const match = session.matches.find((m) => m.id === matchId);
-    if (!match || match.status !== 'scheduled') return;
+    if (!match) return;
+
+    const remainingMatches = session.matches.filter((m) => m.id !== matchId);
+    const updatedPlayers = recomputeAllRatings(session.players, remainingMatches);
+    const updatedCourts = session.courts.map((c) =>
+      c.currentMatchId === matchId ? { ...c, currentMatchId: undefined } : c
+    );
+
     const nextSession: TournamentSession = {
       ...session,
-      matches: session.matches.filter((m) => m.id !== matchId),
+      matches: remainingMatches,
+      players: updatedPlayers,
+      courts: updatedCourts,
     };
     setSession(nextSession);
     persistSession(nextSession);

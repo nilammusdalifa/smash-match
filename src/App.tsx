@@ -494,7 +494,8 @@ export default function App() {
       session!.name,
       session!.players.map((p) => ({ ...p, currentRating: p.initialRating })),
       session!.courtCount,
-      session!.rules
+      session!.rules,
+      session!.courts.map((c) => ({ name: c.name }))
     );
     setSession(reset);
   };

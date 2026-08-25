@@ -356,6 +356,11 @@ export default function App() {
       currentRating: startingRating,
       skillLevel: tier,
       active: true,
+      // An unset arrivedAt means "present since session start" — correct
+      // for the initial roster, wrong for someone added mid-session, who
+      // would otherwise retroactively count as owed entitlement for every
+      // match that already happened before they existed.
+      arrivedAt: Date.now(),
     };
     const sessionWithPlayer = { ...session, players: [...session.players, newPlayer] };
     const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPlayer);

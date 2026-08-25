@@ -202,6 +202,22 @@ function pickBestFoursome(
   slotsNeeded: number,
   history: FairnessHistory
 ): { four: [Player, Player, Player, Player]; split: TeamSplit } {
+  return pickTopFoursomeOptions(mustPlay, tiedCandidates, slotsNeeded, history, 1)[0];
+}
+
+/**
+ * Same search as pickBestFoursome, but returns the `topK` best-scoring
+ * foursomes instead of only the single best — lets a caller offer a
+ * reroll among comparably fair options instead of always the one true
+ * best answer.
+ */
+function pickTopFoursomeOptions(
+  mustPlay: Player[],
+  tiedCandidates: Player[],
+  slotsNeeded: number,
+  history: FairnessHistory,
+  topK: number
+): Array<{ four: [Player, Player, Player, Player]; split: TeamSplit; score: number }> {
   const MAX_TIED_POOL_FOR_SEARCH = 14;
   const pool = tiedCandidates.length <= MAX_TIED_POOL_FOR_SEARCH
     ? tiedCandidates
@@ -209,17 +225,16 @@ function pickBestFoursome(
 
   const combos = slotsNeeded > 0 ? chooseKCombinations(pool, slotsNeeded) : [[]];
 
-  let best: { four: [Player, Player, Player, Player]; split: TeamSplit; score: number } | null = null;
+  const scored: Array<{ four: [Player, Player, Player, Player]; split: TeamSplit; score: number }> = [];
   combos.forEach((tiedSubset) => {
     const four = [...mustPlay, ...tiedSubset] as [Player, Player, Player, Player];
     const split = pickBestTeamSplit(four, history);
     const score = scoreTeamSplit(split, history);
-    if (!best || score < best.score) {
-      best = { four, split, score };
-    }
+    scored.push({ four, split, score });
   });
 
-  return best!;
+  scored.sort((a, b) => a.score - b.score);
+  return scored.slice(0, Math.max(1, topK));
 }
 
 /**
@@ -286,6 +301,50 @@ export function pickBestAvailableFoursome(
   const slotsNeeded = 4 - mustPlay.length;
 
   return pickBestFoursome(mustPlay, tiedCandidates, slotsNeeded, opts);
+}
+
+/**
+ * How close to the fairness cutoff (in fair-share deficit units, roughly
+ * "games owed") still counts as a legitimate reroll candidate rather than
+ * a genuinely less-deserving player. Wide enough to give real variety,
+ * narrow enough that everyone offered is still close to their fair turn.
+ */
+const REROLL_DEFICIT_TOLERANCE = 1.0;
+
+/**
+ * Same fairness rule as pickBestAvailableFoursome, but returns up to
+ * `topK` comparably-fair options (instead of the single best) so a caller
+ * can offer a reroll — e.g. Custom Match's "Auto Fill" trying again when
+ * the suggested foursome isn't the one you wanted, without resorting to
+ * manually picking all 4 players from scratch.
+ */
+export function pickTopAvailableFoursomeOptions(
+  available: Player[],
+  opts: FairnessHistory & { fairShare?: Map<string, FairShareStats> } = {},
+  topK: number = 5
+): Array<{ four: [Player, Player, Player, Player]; split: TeamSplit }> {
+  const fairShare = opts.fairShare || new Map<string, FairShareStats>();
+
+  const pool = [...available].sort((a, b) => {
+    const d = deficitOf(fairShare, b.id) - deficitOf(fairShare, a.id);
+    if (Math.abs(d) > FAIR_SHARE_EPSILON) return d;
+    return Math.random() - 0.5;
+  });
+
+  const cutoffPlayer = pool[3];
+  const cutoffDeficit = cutoffPlayer ? deficitOf(fairShare, cutoffPlayer.id) : Infinity;
+  const mustPlay = pool.filter(
+    (p) => deficitOf(fairShare, p.id) - cutoffDeficit > REROLL_DEFICIT_TOLERANCE
+  );
+  const tiedCandidates = pool.filter(
+    (p) => Math.abs(deficitOf(fairShare, p.id) - cutoffDeficit) <= REROLL_DEFICIT_TOLERANCE
+  );
+  const slotsNeeded = 4 - mustPlay.length;
+
+  return pickTopFoursomeOptions(mustPlay, tiedCandidates, slotsNeeded, opts, topK).map(({ four, split }) => ({
+    four,
+    split,
+  }));
 }
 
 /**

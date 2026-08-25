@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import {
   generateId,
-  pickBestAvailableFoursome,
+  pickTopAvailableFoursomeOptions,
   computeCarryHistory,
   computePartnerCounts,
   computeOpponentCounts,
@@ -147,13 +147,18 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   };
 
   // Smart Balanced Matchmaking suggestion — picks 4 players and splits them
-  // into the fairest possible teams (tier first, rating as the tiebreak),
-  // the same balancing rule the auto-generated schedule uses. Doesn't
-  // exclude players currently on court, or already queued in some other
-  // scheduled match: Custom Match is commonly used to queue up a match for
-  // after the current rotation, so today's "busy" players will be free by
-  // the time this one starts. It DOES exclude away players — no amount of
-  // "will be free soon" reasoning applies to someone who isn't here.
+  // into fair teams (tier first, then carry/partner/opponent balance),
+  // the same rule the auto-generated schedule uses. Doesn't exclude
+  // players currently on court, or already queued in some other scheduled
+  // match: Custom Match is commonly used to queue up a match for after the
+  // current rotation, so today's "busy" players will be free by the time
+  // this one starts. It DOES exclude away players — no amount of "will be
+  // free soon" reasoning applies to someone who isn't here.
+  //
+  // Picks randomly among several comparably-fair options (not always the
+  // literal single best) so clicking again after a suggestion you don't
+  // want actually gives you something different, instead of the same
+  // deterministic answer every time.
   const handleAutoBalanceCustom = () => {
     const available = presentPlayers(session.players, Date.now(), session.createdAt);
     if (available.length < 4) {
@@ -163,20 +168,22 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
 
     // Real match history (completed + in-progress) drives fairness: whoever
     // has the highest fair-share deficit must play, and who fills the rest
-    // (when several people are tied) is chosen for tier balance and carry
-    // fairness — same rules the auto-generated schedule uses.
+    // (when several people are close on deficit) is chosen for tier
+    // balance and carry fairness — same rules the auto-generated schedule
+    // uses.
     const historyMatches = session.matches.filter((m) => m.status !== 'scheduled');
     const fairShare = computeFairShare(historyMatches, session.players, session.createdAt);
     const carryHistory = computeCarryHistory(historyMatches);
     const partnerCounts = computePartnerCounts(historyMatches);
     const opponentCounts = computeOpponentCounts(historyMatches);
 
-    const { split: best } = pickBestAvailableFoursome(available, {
+    const options = pickTopAvailableFoursomeOptions(available, {
       fairShare,
       partnerCounts,
       opponentCounts,
       carryHistory,
     });
+    const { split: best } = options[Math.floor(Math.random() * options.length)];
 
     setCustomP1(best.t1[0].id);
     setCustomP2(best.t1[1].id);
@@ -208,12 +215,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     const partnerCounts = computePartnerCounts(historyMatches);
     const opponentCounts = computeOpponentCounts(historyMatches);
 
-    const { split: best } = pickBestAvailableFoursome(available, {
+    const options = pickTopAvailableFoursomeOptions(available, {
       fairShare,
       partnerCounts,
       opponentCounts,
       carryHistory,
     });
+    const { split: best } = options[Math.floor(Math.random() * options.length)];
     setSwapP1(best.t1[0].id);
     setSwapP2(best.t1[1].id);
     setSwapP3(best.t2[0].id);

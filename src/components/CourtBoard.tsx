@@ -370,8 +370,10 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               type="number"
                               min="0"
                               max="99"
-                              value={editScoreT1}
-                              onChange={(e) => setEditScoreT1(Number(e.target.value))}
+                              value={editScoreT1 === 0 ? '' : editScoreT1}
+                              onChange={(e) => setEditScoreT1(e.target.value === '' ? 0 : Number(e.target.value))}
+                              onFocus={(e) => e.target.select()}
+                              placeholder="0"
                               className="w-16 h-11 text-center bg-slate-900 border border-emerald-500/50 rounded-lg text-lg font-mono font-bold text-white focus:outline-none focus:border-emerald-500"
                             />
                           </div>
@@ -385,8 +387,10 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               type="number"
                               min="0"
                               max="99"
-                              value={editScoreT2}
-                              onChange={(e) => setEditScoreT2(Number(e.target.value))}
+                              value={editScoreT2 === 0 ? '' : editScoreT2}
+                              onChange={(e) => setEditScoreT2(e.target.value === '' ? 0 : Number(e.target.value))}
+                              onFocus={(e) => e.target.select()}
+                              placeholder="0"
                               className="w-16 h-11 text-center bg-slate-900 border border-teal-500/50 rounded-lg text-lg font-mono font-bold text-white focus:outline-none focus:border-teal-500"
                             />
                           </div>

@@ -119,22 +119,22 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[92vh]">
+      <div className="bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[92vh]">
         {/* Modal Header */}
-        <div className="bg-slate-950 px-4 sm:px-6 py-4 border-b border-slate-800 flex items-center justify-between gap-2">
+        <div className="bg-slate-950 light:bg-slate-50 px-4 sm:px-6 py-4 border-b border-slate-800 light:border-slate-200 flex items-center justify-between gap-2">
           <div className="flex items-center space-x-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 light:bg-emerald-100 border border-emerald-500/40 light:border-emerald-300 flex items-center justify-center text-emerald-400 light:text-emerald-600 font-bold shrink-0">
               <Settings2 className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm sm:text-base font-bold text-white truncate">Create New Tournament Session</h3>
-              <p className="text-xs text-slate-400 hidden sm:block">Set up courts, players, and rules</p>
+              <h3 className="text-sm sm:text-base font-bold text-white light:text-slate-900 truncate">Create New Tournament Session</h3>
+              <p className="text-xs text-slate-400 light:text-slate-500 hidden sm:block">Set up courts, players, and rules</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white border border-slate-700 transition-all cursor-pointer shrink-0"
+            className="p-2 rounded-xl bg-slate-800 light:bg-slate-100 text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900 border border-slate-700 light:border-slate-300 transition-all cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -144,7 +144,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6">
           {/* Tournament Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+            <label className="text-xs font-bold text-slate-300 light:text-slate-600 uppercase tracking-wider block">
               Session / Event Name
             </label>
             <input
@@ -152,18 +152,18 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Friday Night 8-Player Doubles"
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-950 light:bg-slate-50 border border-slate-700 light:border-slate-300 rounded-xl px-4 py-2.5 text-xs text-white light:text-slate-900 placeholder-slate-500 light:placeholder-slate-400 focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           {/* Court Count & Architecture Scalability Slider */}
-          <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3">
+          <div className="bg-slate-950/60 light:bg-slate-50/60 p-4 rounded-2xl border border-slate-800 light:border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-emerald-400" />
+              <label className="text-xs font-bold text-white light:text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-emerald-400 light:text-emerald-600" />
                 <span>Courts Available</span>
               </label>
-              <span className="text-sm font-black text-emerald-400 font-mono px-3 py-1 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+              <span className="text-sm font-black text-emerald-400 light:text-emerald-600 font-mono px-3 py-1 bg-emerald-500/10 light:bg-emerald-50 rounded-lg border border-emerald-500/30 light:border-emerald-300">
                 {courtCount} {courtCount === 1 ? 'Court (Single)' : 'Courts (Multi-Court)'}
               </span>
             </div>
@@ -177,14 +177,14 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
                   className={`py-2.5 sm:py-2 rounded-xl font-bold text-xs border transition-all cursor-pointer ${
                     courtCount === cnt
                       ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950'
-                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-white'
+                      : 'bg-slate-900 light:bg-white text-slate-400 light:text-slate-500 border-slate-800 light:border-slate-200 hover:bg-slate-800 light:hover:bg-slate-100 hover:text-white light:hover:text-slate-900'
                   }`}
                 >
                   {cnt}
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-400 light:text-slate-500">
               Use 1 court for a single rotation, or more for bigger groups.
             </p>
             <div className="space-y-2">
@@ -195,7 +195,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
                   value={courtNameAt(i)}
                   onChange={(e) => setCourtNameAt(i, e.target.value)}
                   placeholder={`Court ${i + 1}`}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 light:bg-slate-50 border border-slate-700 light:border-slate-300 rounded-xl px-3 py-2 text-xs text-white light:text-slate-900 placeholder-slate-500 light:placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                 />
               ))}
             </div>
@@ -204,7 +204,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
           {/* Scoring Rules */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+              <label className="text-xs font-bold text-slate-300 light:text-slate-600 uppercase tracking-wider block">
                 Points to Win
               </label>
               <select
@@ -217,7 +217,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
                   setMaxPointsCap((prevCap) => (prevCap === pointsToWin ? next : prevCap));
                   setPointsToWin(next);
                 }}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                className="w-full bg-slate-950 light:bg-slate-50 border border-slate-700 light:border-slate-300 rounded-xl px-3 py-2 text-xs text-white light:text-slate-900"
               >
                 <option value={30}>30 Points (Single Game Sudden Death)</option>
                 <option value={21}>21 Points (Standard BWF)</option>
@@ -226,13 +226,13 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+              <label className="text-xs font-bold text-slate-300 light:text-slate-600 uppercase tracking-wider block">
                 Max Point Cap
               </label>
               <select
                 value={maxPointsCap}
                 onChange={(e) => setMaxPointsCap(Number(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                className="w-full bg-slate-950 light:bg-slate-50 border border-slate-700 light:border-slate-300 rounded-xl px-3 py-2 text-xs text-white light:text-slate-900"
               >
                 <option value={pointsToWin}>No deuce (First to target)</option>
                 <option value={30}>Deuce, cap at 30</option>
@@ -241,24 +241,24 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
           </div>
 
           {/* Player Roster Manager */}
-          <div className="space-y-3 pt-2 border-t border-slate-800">
+          <div className="space-y-3 pt-2 border-t border-slate-800 light:border-slate-200">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-4 h-4 text-emerald-400" />
+              <label className="text-xs font-bold text-white light:text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Users className="w-4 h-4 text-emerald-400 light:text-emerald-600" />
                 <span>Player Roster ({players.length} Players)</span>
               </label>
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
                   onClick={() => setShowBulkInput(!showBulkInput)}
-                  className="text-xs text-emerald-400 hover:underline"
+                  className="text-xs text-emerald-400 light:text-emerald-600 hover:underline"
                 >
                   {showBulkInput ? 'Single Input' : 'Bulk Paste Names'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setPlayers([...DEFAULT_PLAYERS])}
-                  className="text-xs text-slate-400 hover:text-white"
+                  className="text-xs text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900"
                 >
                   Load Sample
                 </button>
@@ -267,15 +267,15 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
 
             {/* Bulk Text Area */}
             {showBulkInput ? (
-              <div className="space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800">
+              <div className="space-y-2 bg-slate-950 light:bg-slate-50 p-3 rounded-2xl border border-slate-800 light:border-slate-200">
                 <textarea
                   rows={4}
                   placeholder={'Raden .A\nNilam .A\nFahmi .B\nNovi .C'}
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 rounded-xl p-3 text-xs text-white light:text-slate-900 focus:outline-none focus:border-emerald-500 font-mono"
                 />
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-500 light:text-slate-400">
                   One per line or comma-separated. Add a tier like ".A" — leave it off and they default to Tier A.
                 </p>
                 <button
@@ -300,13 +300,13 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
                       handleAddPlayer();
                     }
                   }}
-                  className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 sm:py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  className="flex-1 bg-slate-950 light:bg-slate-50 border border-slate-700 light:border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-xs text-white light:text-slate-900 placeholder-slate-500 light:placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                 />
                 <div className="flex gap-2">
                   <select
                     value={newPlayerSkill}
                     onChange={(e) => setNewPlayerSkill(e.target.value as any)}
-                    className="flex-1 sm:flex-none bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2.5 sm:py-2 text-xs text-slate-300"
+                    className="flex-1 sm:flex-none bg-slate-950 light:bg-slate-50 border border-slate-700 light:border-slate-300 rounded-xl px-2.5 py-2.5 sm:py-2 text-xs text-slate-300 light:text-slate-600"
                   >
                     <option value="A">A</option>
                     <option value="B">B</option>
@@ -327,22 +327,22 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
             {/* Players Pill List */}
             <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
               {players.length === 0 && (
-                <p className="text-xs text-slate-500 py-1">
+                <p className="text-xs text-slate-500 light:text-slate-400 py-1">
                   No players yet — add one above, paste a list, or load the sample roster.
                 </p>
               )}
               {players.map((p, idx) => (
                 <div
                   key={p.id}
-                  className="bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs"
+                  className="bg-slate-950/80 light:bg-slate-50/80 border border-slate-800 light:border-slate-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs"
                 >
-                  <span className="font-mono text-slate-500 text-[10px]">{idx + 1}.</span>
-                  <span className="font-semibold text-white">{p.name}</span>
-                  <span className="text-[10px] text-slate-400">({p.skillLevel})</span>
+                  <span className="font-mono text-slate-500 light:text-slate-400 text-[10px]">{idx + 1}.</span>
+                  <span className="font-semibold text-white light:text-slate-900">{p.name}</span>
+                  <span className="text-[10px] text-slate-400 light:text-slate-500">({p.skillLevel})</span>
                   <button
                     type="button"
                     onClick={() => handleRemovePlayer(p.id)}
-                    className="text-slate-500 hover:text-rose-400 ml-1 transition-colors"
+                    className="text-slate-500 light:text-slate-400 hover:text-rose-400 light:hover:text-rose-600 ml-1 transition-colors"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -353,11 +353,11 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="bg-slate-950 px-4 sm:px-6 py-4 border-t border-slate-800 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
+        <div className="bg-slate-950 light:bg-slate-50 px-4 sm:px-6 py-4 border-t border-slate-800 light:border-slate-200 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 sm:py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 cursor-pointer"
+            className="px-4 py-2.5 sm:py-2 rounded-xl bg-slate-800 light:bg-slate-100 text-slate-300 light:text-slate-600 text-xs font-semibold hover:bg-slate-700 light:hover:bg-slate-200 cursor-pointer"
           >
             Cancel
           </button>

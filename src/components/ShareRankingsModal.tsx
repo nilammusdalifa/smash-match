@@ -142,12 +142,12 @@ export const ShareRankingsModal: React.FC<ShareRankingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh]">
-        <div className="px-4 sm:px-5 py-3.5 border-b border-slate-800 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-white">Share Top 5</h3>
+      <div className="bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh]">
+        <div className="px-4 sm:px-5 py-3.5 border-b border-slate-800 light:border-slate-200 flex items-center justify-between">
+          <h3 className="text-sm font-bold text-white light:text-slate-900">Share Top 5</h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+            className="p-1.5 rounded-lg bg-slate-800 light:bg-slate-100 text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900"
           >
             <X className="w-4 h-4" />
           </button>

@@ -51,13 +51,13 @@ export const NotificationsBanner: React.FC<NotificationsBannerProps> = ({
     switch (type) {
       case 'court_ready':
       case 'match_start':
-        return <Play className="w-4 h-4 text-emerald-400 fill-current" />;
+        return <Play className="w-4 h-4 text-emerald-400 light:text-emerald-600 fill-current" />;
       case 'match_completed':
-        return <Trophy className="w-4 h-4 text-amber-400" />;
+        return <Trophy className="w-4 h-4 text-amber-400 light:text-amber-600" />;
       case 'resting_alert':
-        return <Coffee className="w-4 h-4 text-cyan-400" />;
+        return <Coffee className="w-4 h-4 text-cyan-400 light:text-cyan-600" />;
       default:
-        return <Bell className="w-4 h-4 text-amber-400" />;
+        return <Bell className="w-4 h-4 text-amber-400 light:text-amber-600" />;
     }
   };
 
@@ -66,27 +66,27 @@ export const NotificationsBanner: React.FC<NotificationsBannerProps> = ({
       {unread.map((n) => (
         <div
           key={n.id}
-          className="pointer-events-auto bg-slate-900/95 border border-emerald-500/40 backdrop-blur-md p-3.5 rounded-2xl shadow-2xl flex items-start justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300"
+          className="pointer-events-auto bg-slate-900/95 light:bg-white/95 border border-emerald-500/40 light:border-emerald-300 backdrop-blur-md p-3.5 rounded-2xl shadow-2xl flex items-start justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300"
         >
           <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-8 h-8 rounded-xl bg-slate-800 light:bg-slate-100 border border-slate-700 light:border-slate-300 flex items-center justify-center shrink-0 mt-0.5">
               {getIcon(n.type)}
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 light:text-emerald-600">
                   {n.courtName}
                 </span>
-                <span className="text-slate-600 text-xs">•</span>
-                <h4 className="text-xs font-bold text-white">{n.title}</h4>
+                <span className="text-slate-600 light:text-slate-300 text-xs">•</span>
+                <h4 className="text-xs font-bold text-white light:text-slate-900">{n.title}</h4>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5 leading-snug">{n.message}</p>
+              <p className="text-xs text-slate-300 light:text-slate-600 mt-0.5 leading-snug">{n.message}</p>
             </div>
           </div>
 
           <button
             onClick={() => onDismiss(n.id)}
-            className="text-slate-500 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0"
+            className="text-slate-500 light:text-slate-400 hover:text-white light:hover:text-slate-900 p-1 rounded-lg hover:bg-slate-800 light:hover:bg-slate-100 transition-colors shrink-0"
           >
             <X className="w-3.5 h-3.5" />
           </button>

@@ -34,10 +34,10 @@ export const RolePickerModal: React.FC<RolePickerModalProps> = ({ sessionId, onR
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-5">
+      <div className="bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-5">
         <div className="text-center space-y-1">
-          <h2 className="text-lg font-bold text-white">How are you joining?</h2>
-          <p className="text-xs text-slate-400">Pick your role for this live session.</p>
+          <h2 className="text-lg font-bold text-white light:text-slate-900">How are you joining?</h2>
+          <p className="text-xs text-slate-400 light:text-slate-500">Pick your role for this live session.</p>
         </div>
 
         {mode === 'choose' ? (
@@ -45,7 +45,7 @@ export const RolePickerModal: React.FC<RolePickerModalProps> = ({ sessionId, onR
             <button
               id="btn-role-player"
               onClick={() => onResolved('player')}
-              className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold text-sm cursor-pointer"
+              className="w-full py-3 rounded-xl bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 border border-slate-700 light:border-slate-300 text-white light:text-slate-900 font-semibold text-sm cursor-pointer"
             >
               Player (just watching)
             </button>
@@ -67,9 +67,9 @@ export const RolePickerModal: React.FC<RolePickerModalProps> = ({ sessionId, onR
               placeholder="Enter 4-digit PIN"
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-              className="w-full text-center tracking-[0.5em] text-lg bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+              className="w-full text-center tracking-[0.5em] text-lg bg-slate-950 light:bg-slate-50 border border-slate-700 light:border-slate-300 rounded-xl px-4 py-3 text-white light:text-slate-900 focus:outline-none focus:border-emerald-500"
             />
-            {error && <p className="text-xs text-rose-400 text-center">{error}</p>}
+            {error && <p className="text-xs text-rose-400 light:text-rose-600 text-center">{error}</p>}
             <button
               id="btn-submit-pin"
               disabled={pin.length !== 4 || checking}
@@ -83,7 +83,7 @@ export const RolePickerModal: React.FC<RolePickerModalProps> = ({ sessionId, onR
                 setMode('choose');
                 setError('');
               }}
-              className="w-full text-xs text-slate-400 hover:text-white cursor-pointer"
+              className="w-full text-xs text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900 cursor-pointer"
             >
               Back
             </button>

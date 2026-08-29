@@ -124,21 +124,21 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[98vh] sm:max-h-[95vh]">
+      <div className="bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[98vh] sm:max-h-[95vh]">
         {/* Header Bar */}
-        <div className="bg-slate-950 px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-800 flex items-center justify-between gap-2">
+        <div className="bg-slate-950 light:bg-slate-50 px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-800 light:border-slate-200 flex items-center justify-between gap-2">
           <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 light:bg-emerald-100 border border-emerald-500/40 light:border-emerald-300 flex items-center justify-center text-emerald-400 light:text-emerald-600 font-bold shrink-0">
               {match.courtId || '1'}
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <h3 className="text-sm sm:text-base font-bold text-white truncate">Umpire Scoreboard</h3>
-                <span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono whitespace-nowrap shrink-0">
+                <h3 className="text-sm sm:text-base font-bold text-white light:text-slate-900 truncate">Umpire Scoreboard</h3>
+                <span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-full bg-slate-800 light:bg-slate-100 text-slate-300 light:text-slate-600 border border-slate-700 light:border-slate-300 font-mono whitespace-nowrap shrink-0">
                   R{match.roundNumber} • #{match.matchNumber}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 hidden sm:block truncate">
+              <p className="text-xs text-slate-400 light:text-slate-500 hidden sm:block truncate">
                 {match.courtName || 'Court 1'} • {targetScore} points to win (cap {maxCap})
               </p>
             </div>
@@ -147,7 +147,7 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
           <div className="flex items-center space-x-2 shrink-0">
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900 border border-slate-700 light:border-slate-300 transition-all cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -156,8 +156,8 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
 
         {/* Match Point / Game Status Banner */}
         {isGameOver ? (
-          <div className="bg-emerald-500/20 border-b border-emerald-500/40 py-2.5 px-4 text-center">
-            <span className="inline-flex items-center gap-2 text-sm font-bold text-emerald-300 animate-pulse">
+          <div className="bg-emerald-500/20 light:bg-emerald-100 border-b border-emerald-500/40 light:border-emerald-300 py-2.5 px-4 text-center">
+            <span className="inline-flex items-center gap-2 text-sm font-bold text-emerald-300 light:text-emerald-700 animate-pulse">
               <Trophy className="w-4 h-4" /> Match Finished! Winner:{' '}
               {isTeam1Won
                 ? `${match.team1.player1.name} & ${match.team1.player2.name}`
@@ -165,8 +165,8 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
             </span>
           </div>
         ) : (isTeam1MatchPoint || isTeam2MatchPoint) ? (
-          <div className="bg-amber-500/20 border-b border-amber-500/40 py-2 px-4 text-center">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-300 animate-bounce">
+          <div className="bg-amber-500/20 light:bg-amber-100 border-b border-amber-500/40 light:border-amber-300 py-2 px-4 text-center">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-300 light:text-amber-700 animate-bounce">
               <Sparkles className="w-3.5 h-3.5" /> Match Point (Rally to Win!)
             </span>
           </div>
@@ -178,33 +178,33 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
             {/* Left Court Team */}
             <div 
               className={`rounded-3xl p-6 sm:p-8 border-2 transition-all flex flex-col justify-between relative overflow-hidden ${
-                servingTeam === leftTeamNum 
-                  ? 'bg-slate-800/90 border-emerald-500/60 shadow-xl shadow-emerald-950/40' 
-                  : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                servingTeam === leftTeamNum
+                  ? 'bg-slate-800/90 light:bg-slate-100/90 border-emerald-500/60 light:border-emerald-400 shadow-xl shadow-emerald-950/40 light:shadow-emerald-200/40'
+                  : 'bg-slate-900/80 light:bg-white/80 border-slate-800 light:border-slate-200 hover:border-slate-700 light:hover:border-slate-300'
               }`}
             >
               {servingTeam === leftTeamNum && (
-                <div className="absolute top-4 right-4 flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/30">
+                <div className="absolute top-4 right-4 flex items-center gap-1 text-xs font-bold text-emerald-400 light:text-emerald-600 bg-emerald-500/10 light:bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-500/30 light:border-emerald-300">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
                   Serving ({isServingFromRight ? 'Right Box' : 'Left Box'})
                 </div>
               )}
 
               <div>
-                <div className="text-xs font-bold uppercase tracking-wider text-emerald-400/90 mb-1">
+                <div className="text-xs font-bold uppercase tracking-wider text-emerald-400/90 light:text-emerald-600/90 mb-1">
                   Team {leftTeamNum === 1 ? 'A' : 'B'}
                 </div>
-                <div className="text-xl sm:text-2xl font-bold text-white truncate">
+                <div className="text-xl sm:text-2xl font-bold text-white light:text-slate-900 truncate">
                   {leftTeam.player1.name}
                 </div>
-                <div className="text-lg sm:text-xl font-bold text-slate-300 truncate mt-0.5">
+                <div className="text-lg sm:text-xl font-bold text-slate-300 light:text-slate-600 truncate mt-0.5">
                   {leftTeam.player2.name}
                 </div>
               </div>
 
               {/* Big Score Display */}
               <div className="my-6 text-center">
-                <div className="font-mono font-black text-6xl sm:text-8xl text-white tracking-tighter">
+                <div className="font-mono font-black text-6xl sm:text-8xl text-white light:text-slate-900 tracking-tighter">
                   {leftScore}
                 </div>
               </div>
@@ -216,8 +216,8 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
                 onClick={() => addPoint(leftTeamNum as 1 | 2)}
                 className={`w-full py-4 sm:py-5 rounded-2xl font-extrabold text-base sm:text-lg flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 cursor-pointer ${
                   isGameOver
-                    ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40 hover:shadow-emerald-900/70'
+                    ? 'bg-slate-800 light:bg-slate-100 text-slate-600 light:text-slate-300 cursor-not-allowed'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40 light:shadow-emerald-200/40 hover:shadow-emerald-900/70 light:hover:shadow-emerald-200/70'
                 }`}
               >
                 <span>+1 Point (Team {leftTeamNum === 1 ? 'A' : 'B'})</span>
@@ -227,33 +227,33 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
             {/* Right Court Team */}
             <div 
               className={`rounded-3xl p-6 sm:p-8 border-2 transition-all flex flex-col justify-between relative overflow-hidden ${
-                servingTeam === rightTeamNum 
-                  ? 'bg-slate-800/90 border-teal-500/60 shadow-xl shadow-teal-950/40' 
-                  : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                servingTeam === rightTeamNum
+                  ? 'bg-slate-800/90 light:bg-slate-100/90 border-teal-500/60 light:border-teal-400 shadow-xl shadow-teal-950/40 light:shadow-teal-200/40'
+                  : 'bg-slate-900/80 light:bg-white/80 border-slate-800 light:border-slate-200 hover:border-slate-700 light:hover:border-slate-300'
               }`}
             >
               {servingTeam === rightTeamNum && (
-                <div className="absolute top-4 right-4 flex items-center gap-1 text-xs font-bold text-teal-400 bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/30">
+                <div className="absolute top-4 right-4 flex items-center gap-1 text-xs font-bold text-teal-400 light:text-teal-600 bg-teal-500/10 light:bg-teal-50 px-2.5 py-1 rounded-full border border-teal-500/30 light:border-teal-300">
                   <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
                   Serving ({isServingFromRight ? 'Right Box' : 'Left Box'})
                 </div>
               )}
 
               <div>
-                <div className="text-xs font-bold uppercase tracking-wider text-teal-400/90 mb-1">
+                <div className="text-xs font-bold uppercase tracking-wider text-teal-400/90 light:text-teal-600/90 mb-1">
                   Team {rightTeamNum === 1 ? 'A' : 'B'}
                 </div>
-                <div className="text-xl sm:text-2xl font-bold text-white truncate">
+                <div className="text-xl sm:text-2xl font-bold text-white light:text-slate-900 truncate">
                   {rightTeam.player1.name}
                 </div>
-                <div className="text-lg sm:text-xl font-bold text-slate-300 truncate mt-0.5">
+                <div className="text-lg sm:text-xl font-bold text-slate-300 light:text-slate-600 truncate mt-0.5">
                   {rightTeam.player2.name}
                 </div>
               </div>
 
               {/* Big Score Display */}
               <div className="my-6 text-center">
-                <div className="font-mono font-black text-6xl sm:text-8xl text-white tracking-tighter">
+                <div className="font-mono font-black text-6xl sm:text-8xl text-white light:text-slate-900 tracking-tighter">
                   {rightScore}
                 </div>
               </div>
@@ -265,8 +265,8 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
                 onClick={() => addPoint(rightTeamNum as 1 | 2)}
                 className={`w-full py-4 sm:py-5 rounded-2xl font-extrabold text-base sm:text-lg flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 cursor-pointer ${
                   isGameOver
-                    ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                    : 'bg-teal-600 hover:bg-teal-500 text-white shadow-teal-900/40 hover:shadow-teal-900/70'
+                    ? 'bg-slate-800 light:bg-slate-100 text-slate-600 light:text-slate-300 cursor-not-allowed'
+                    : 'bg-teal-600 hover:bg-teal-500 text-white shadow-teal-900/40 light:shadow-teal-200/40 hover:shadow-teal-900/70 light:hover:shadow-teal-200/70'
                 }`}
               >
                 <span>+1 Point (Team {rightTeamNum === 1 ? 'A' : 'B'})</span>
@@ -275,28 +275,28 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
           </div>
 
           {/* Quick Service Box Guide */}
-          <div className="mt-4 bg-slate-950/60 p-3 rounded-2xl border border-slate-800 text-xs text-slate-400 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="mt-4 bg-slate-950/60 light:bg-slate-50/60 p-3 rounded-2xl border border-slate-800 light:border-slate-200 text-xs text-slate-400 light:text-slate-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-emerald-400 shrink-0" />
+              <ShieldAlert className="w-4 h-4 text-emerald-400 light:text-emerald-600 shrink-0" />
               <span>
                 <strong>Service Rule:</strong> Serving team score ({currentServingScore}) is{' '}
                 {isServingFromRight ? 'EVEN → Serve from RIGHT court' : 'ODD → Serve from LEFT court'}.
               </span>
             </div>
-            <div className="hidden sm:flex items-center gap-2 text-slate-500">
+            <div className="hidden sm:flex items-center gap-2 text-slate-500 light:text-slate-400">
               <span>Score History: {scoreHistory.length - 1} rallies</span>
             </div>
           </div>
         </div>
 
         {/* Umpire Controls Footer */}
-        <div className="bg-slate-950 px-6 py-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-slate-950 light:bg-slate-50 px-6 py-4 border-t border-slate-800 light:border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
             <button
               id="btn-undo-point"
               onClick={handleUndo}
               disabled={scoreHistory.length <= 1}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all border border-slate-700 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-300 light:text-slate-600 hover:text-white light:hover:text-slate-900 text-xs font-semibold flex items-center gap-1.5 transition-all border border-slate-700 light:border-slate-300 cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Undo Point</span>
@@ -305,16 +305,16 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
             <button
               id="btn-swap-ends"
               onClick={handleSwapEnds}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all border border-slate-700 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-slate-300 light:text-slate-600 hover:text-white light:hover:text-slate-900 text-xs font-semibold flex items-center gap-1.5 transition-all border border-slate-700 light:border-slate-300 cursor-pointer"
             >
-              <ArrowLeftRight className="w-3.5 h-3.5 text-amber-400" />
+              <ArrowLeftRight className="w-3.5 h-3.5 text-amber-400 light:text-amber-600" />
               <span>Swap Ends</span>
             </button>
 
             <button
               id="btn-toggle-server"
               onClick={() => setServingTeam(servingTeam === 1 ? 2 : 1)}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all border border-slate-700 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-slate-300 light:text-slate-600 hover:text-white light:hover:text-slate-900 text-xs font-semibold flex items-center gap-1.5 transition-all border border-slate-700 light:border-slate-300 cursor-pointer"
             >
               <span>Switch Server (Team {servingTeam === 1 ? 'B' : 'A'})</span>
             </button>
@@ -324,7 +324,7 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
             <button
               id="btn-modal-finish-match"
               onClick={handleFinishMatch}
-              className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-emerald-950 cursor-pointer"
+              className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-emerald-950 light:shadow-emerald-200 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Complete & Record Result</span>

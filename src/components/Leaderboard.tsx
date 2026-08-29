@@ -17,6 +17,20 @@ interface LeaderboardProps {
   onSelectPlayer: (player: Player) => void;
 }
 
+// A short horizontal rule with corner ticks, echoing a badminton court's
+// short service line — used as the one visual divider on this page,
+// marking exactly where "has played" ends and "hasn't played yet" begins.
+const ServiceLineDivider: React.FC<{ label: string; patchBg: string }> = ({ label, patchBg }) => (
+  <div className="relative py-2">
+    <div className="h-px bg-slate-200/50" />
+    <span
+      className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 ${patchBg}`}
+    >
+      {label}
+    </span>
+  </div>
+);
+
 export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlayer }) => {
   const [sortBy, setSortBy] = useState<'rank' | 'winRate' | 'pointDiff' | 'wins'>('rank');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
@@ -25,7 +39,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
   const stats = computePlayerStats(session.players, session.matches);
   const top5ByRank = [...stats].sort((a, b) => a.rank - b.rank).slice(0, 5);
 
-  // Sorting (rank already factors in rating as an internal tiebreaker — see ranking.ts)
+  // Sorting (rank already factors in rating as an internal tiebreaker — see
+  // ranking.ts). Ties preserve the incoming played-before-unplayed order
+  // from computePlayerStats since Array.sort is stable, so the service-line
+  // divider position below stays correct under every sort column.
   const sortedStats = [...stats].sort((a, b) => {
     let diff = 0;
     if (sortBy === 'rank') diff = a.rank - b.rank;
@@ -35,6 +52,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
 
     return sortAsc ? -diff : diff;
   });
+
+  const firstUnplayedIndex = sortedStats.findIndex((st) => st.matchesPlayed === 0);
+  const hasDivider = firstUnplayedIndex > 0;
 
   const handleSort = (field: typeof sortBy) => {
     if (sortBy === field) {
@@ -49,11 +69,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
   // yet — a "ranking" with 0 games behind it is meaningless, and handing
   // out gold/silver/bronze before anyone's played is actively misleading.
   const getRankBadge = (rank: number, matchesPlayed: number) => {
-    if (matchesPlayed === 0) return <span className="font-mono text-slate-600 text-sm">—</span>;
+    if (matchesPlayed === 0) return <span className="font-mono tabular-nums text-slate-600 text-sm">—</span>;
     if (rank === 1) return <span className="text-xl">🥇</span>;
     if (rank === 2) return <span className="text-xl">🥈</span>;
     if (rank === 3) return <span className="text-xl">🥉</span>;
-    return <span className="font-mono font-bold text-slate-400 text-sm">{rank}</span>;
+    return <span className="font-mono tabular-nums font-bold text-slate-400 text-sm">{rank}</span>;
   };
 
   return (
@@ -71,16 +91,19 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Top Performer Ribbon */}
+          {/* On Serve — the current leader, styled after the same pulsing-dot
+              "serving" indicator already used in the live scorekeeper, so it
+              reads as a familiar convention rather than a new decoration. */}
           {sortedStats.length > 0 && sortedStats[0].matchesPlayed > 0 && (
             <div className="bg-gradient-to-r from-amber-500/10 to-emerald-500/10 border border-amber-500/30 px-4 py-2.5 rounded-xl flex items-center gap-3">
               <Award className="w-5 h-5 text-amber-400 shrink-0" />
               <div className="text-xs">
-                <span className="text-amber-400 font-bold uppercase tracking-wider block text-[11px]">
-                  Tournament Leader
+                <span className="text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                  On Serve
                 </span>
                 <span className="font-bold text-white">{sortedStats[0].player.name}</span>
-                <span className="text-slate-400 ml-1.5 font-mono">
+                <span className="text-slate-400 ml-1.5 font-mono tabular-nums">
                   ({sortedStats[0].matchesWon}W - {sortedStats[0].matchesLost}L • {sortedStats[0].winRate}%)
                 </span>
               </div>
@@ -109,13 +132,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
 
       {/* Mobile: Player Rank Cards */}
       <div className="space-y-2.5 sm:hidden">
-        {sortedStats.map((st) => {
+        {sortedStats.map((st, idx) => {
           const isHot = st.form.length >= 2 && st.form.slice(-2).every((f) => f === 'W');
-          return (
+          const card = (
             <button
               key={st.player.id}
               onClick={() => onSelectPlayer(st.player)}
-              className="w-full text-left bg-slate-900 border border-slate-800 rounded-2xl p-4 active:bg-slate-800/60 transition-colors"
+              className={`w-full text-left bg-slate-900 border border-slate-800 rounded-2xl p-4 active:bg-slate-800/60 transition-colors ${
+                st.matchesPlayed === 0 ? 'opacity-60' : ''
+              }`}
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 shrink-0 text-center">{getRankBadge(st.rank, st.matchesPlayed)}</div>
@@ -123,11 +148,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                   {st.player.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-white flex items-center gap-1.5 truncate">
+                  <div className={`font-bold flex items-center gap-1.5 truncate ${st.matchesPlayed === 0 ? 'text-slate-400' : 'text-white'}`}>
                     <span className="truncate">{st.player.name}</span>
                     {isHot && <Flame className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse fill-amber-400/30" />}
                   </div>
-                  <div className="text-[11px] text-slate-400">
+                  <div className="text-[11px] text-slate-400 font-mono tabular-nums">
                     {st.matchesPlayed} played • <span className="text-emerald-400 font-semibold">{st.matchesWon}W</span>-<span className="text-rose-400 font-semibold">{st.matchesLost}L</span>
                   </div>
                 </div>
@@ -135,11 +160,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
 
               <div className="mt-3 grid grid-cols-3 gap-2 text-center">
                 <div className="bg-slate-950/60 rounded-lg py-1.5">
-                  <div className="text-xs font-bold text-slate-200">{st.winRate}%</div>
+                  <div className="text-xs font-bold font-mono tabular-nums text-slate-200">{st.winRate}%</div>
                   <div className="text-[10px] text-slate-500">Win Rate</div>
                 </div>
                 <div className="bg-slate-950/60 rounded-lg py-1.5">
-                  <div className={`text-xs font-bold ${st.pointDiff > 0 ? 'text-emerald-400' : st.pointDiff < 0 ? 'text-rose-400' : 'text-slate-300'}`}>
+                  <div className={`text-xs font-bold font-mono tabular-nums ${st.pointDiff > 0 ? 'text-emerald-400' : st.pointDiff < 0 ? 'text-rose-400' : 'text-slate-300'}`}>
                     {st.pointDiff > 0 ? `+${st.pointDiff}` : st.pointDiff}
                   </div>
                   <div className="text-[10px] text-slate-500">Pt Diff</div>
@@ -165,6 +190,16 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
               </div>
             </button>
           );
+
+          if (hasDivider && idx === firstUnplayedIndex) {
+            return (
+              <React.Fragment key={`${st.player.id}-wrap`}>
+                <ServiceLineDivider label="Not yet on court" patchBg="bg-slate-950" />
+                {card}
+              </React.Fragment>
+            );
+          }
+          return card;
         })}
       </div>
 
@@ -205,14 +240,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {sortedStats.map((st) => {
+              {sortedStats.map((st, idx) => {
                 const isHot = st.form.length >= 2 && st.form.slice(-2).every((f) => f === 'W');
+                const notPlayed = st.matchesPlayed === 0;
 
-                return (
+                const row = (
                   <tr
                     key={st.player.id}
                     onClick={() => onSelectPlayer(st.player)}
-                    className="hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                    className={`hover:bg-slate-800/50 transition-colors cursor-pointer group ${notPlayed ? 'opacity-60' : ''}`}
                   >
                     {/* Rank */}
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
@@ -226,7 +262,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                           {st.player.name.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-bold text-white group-hover:text-emerald-400 transition-colors flex items-center gap-1.5">
+                          <div className={`font-bold group-hover:text-emerald-400 transition-colors flex items-center gap-1.5 ${notPlayed ? 'text-slate-400' : 'text-white'}`}>
                             <span>{st.player.name}</span>
                             {isHot && (
                               <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse fill-amber-400/30" />
@@ -249,7 +285,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                     </td>
 
                     {/* Matches Won / Lost */}
-                    <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                    <td className="py-3.5 px-3 text-center whitespace-nowrap font-mono tabular-nums">
                       <span className="font-bold text-white">{st.matchesPlayed}</span>
                       <span className="text-slate-500 mx-1">/</span>
                       <span className="font-bold text-emerald-400">{st.matchesWon}W</span>
@@ -260,7 +296,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                     {/* Win Rate */}
                     <td className="py-3.5 px-3 text-center whitespace-nowrap">
                       <div className="flex flex-col items-center space-y-1">
-                        <span className="font-bold text-slate-200">{st.winRate}%</span>
+                        <span className="font-bold font-mono tabular-nums text-slate-200">{st.winRate}%</span>
                         <div className="w-16 bg-slate-800 h-1.5 rounded-full overflow-hidden">
                           <div
                             className="bg-emerald-500 h-full rounded-full"
@@ -273,7 +309,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                     {/* Point Diff */}
                     <td className="py-3.5 px-3 text-center whitespace-nowrap">
                       <span
-                        className={`font-mono font-bold px-2 py-0.5 rounded-md ${
+                        className={`font-mono tabular-nums font-bold px-2 py-0.5 rounded-md ${
                           st.pointDiff > 0
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : st.pointDiff < 0
@@ -286,7 +322,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                     </td>
 
                     {/* PF : PA */}
-                    <td className="py-3.5 px-3 text-center whitespace-nowrap font-mono text-slate-400">
+                    <td className="py-3.5 px-3 text-center whitespace-nowrap font-mono tabular-nums text-slate-400">
                       <span className="text-slate-200">{st.pointsScored}</span>
                       <span className="text-slate-600 mx-1">:</span>
                       <span className="text-slate-400">{st.pointsConceded}</span>
@@ -320,6 +356,20 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                     </td>
                   </tr>
                 );
+
+                if (hasDivider && idx === firstUnplayedIndex) {
+                  return (
+                    <React.Fragment key={`${st.player.id}-wrap`}>
+                      <tr>
+                        <td colSpan={8} className="p-0">
+                          <ServiceLineDivider label="Not yet on court" patchBg="bg-slate-900" />
+                        </td>
+                      </tr>
+                      {row}
+                    </React.Fragment>
+                  );
+                }
+                return row;
               })}
             </tbody>
           </table>

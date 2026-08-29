@@ -75,6 +75,12 @@ export interface TournamentSession {
   id: string;
   name: string;
   date: string;
+  /** Venue/hall name — display only, doesn't affect scheduling. */
+  venue?: string;
+  /** "HH:MM" — display only, doesn't affect scheduling. */
+  startTime?: string;
+  /** "HH:MM" — display only, doesn't affect scheduling. */
+  endTime?: string;
   createdAt: number;
   courtCount: number;
   courts: Court[];

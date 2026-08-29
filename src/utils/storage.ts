@@ -104,7 +104,8 @@ export function createNewSession(
   players: Player[] = DEFAULT_PLAYERS,
   courtCount: number = 1,
   rules: GameRules = DEFAULT_RULES,
-  courtConfigs?: CourtConfig[]
+  courtConfigs?: CourtConfig[],
+  details?: { venue?: string; date?: string; startTime?: string; endTime?: string }
 ): TournamentSession {
   const courts = initializeCourts(courtCount, courtConfigs);
   const { matches, totalRounds } = generateRotatingDoublesSchedule(players, courts, rules);
@@ -112,7 +113,10 @@ export function createNewSession(
   const newSession: TournamentSession = {
     id: 'session_' + Date.now(),
     name,
-    date: new Date().toISOString().split('T')[0],
+    date: details?.date || new Date().toISOString().split('T')[0],
+    venue: details?.venue,
+    startTime: details?.startTime,
+    endTime: details?.endTime,
     createdAt: Date.now(),
     courtCount,
     courts,

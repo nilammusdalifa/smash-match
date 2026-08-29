@@ -133,8 +133,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </span>
                 </h1>
               </div>
-              <p className="text-xs text-slate-400 truncate max-w-[160px] sm:max-w-xs">
-                {session.name} • {session.players.length} Players • {session.courtCount} {session.courtCount === 1 ? 'Court' : 'Courts'}
+              <p className="text-xs text-slate-400 truncate max-w-[220px] sm:max-w-sm">
+                {/* `date` always has a value (defaults to today), so it alone
+                    can't signal "no event details were entered" — only fall
+                    into this branch when venue or a time was actually set. */}
+                {session.venue || session.startTime || session.endTime
+                  ? [
+                      session.venue,
+                      session.date ? new Date(session.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : null,
+                      session.startTime && session.endTime ? `${session.startTime}–${session.endTime}` : null,
+                    ].filter(Boolean).join(' • ')
+                  : `${session.players.length} Players • ${session.courtCount} ${session.courtCount === 1 ? 'Court' : 'Courts'}`}
               </p>
             </div>
           </div>

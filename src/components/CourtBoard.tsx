@@ -485,24 +485,15 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                   </div>
 
                   {nextMatch ? (
-                    <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
-                      <div className="space-y-1">
-                        <div className="font-medium text-slate-200">
-                          <span className="text-emerald-400 font-semibold">{nextMatch.team1.player1.name} & {nextMatch.team1.player2.name}</span>
-                          <span className="text-slate-500 mx-1.5">vs</span>
-                          <span className="text-teal-400 font-semibold">{nextMatch.team2.player1.name} & {nextMatch.team2.player2.name}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {!activeMatch && !readOnly && (
-                          <button
-                            onClick={() => onStartMatch(nextMatch.id, court.id)}
-                            className="flex-1 sm:flex-none px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-all cursor-pointer"
-                          >
-                            Start
-                          </button>
-                        )}
+                    // Purely informational here — when the court is idle, the
+                    // "Court is Ready" block above already has the one Start
+                    // button for this same match; a second one here would
+                    // just be the same action twice.
+                    <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-xs">
+                      <div className="font-medium text-slate-200">
+                        <span className="text-emerald-400 font-semibold">{nextMatch.team1.player1.name} & {nextMatch.team1.player2.name}</span>
+                        <span className="text-slate-500 mx-1.5">vs</span>
+                        <span className="text-teal-400 font-semibold">{nextMatch.team2.player1.name} & {nextMatch.team2.player2.name}</span>
                       </div>
                     </div>
                   ) : suggestion && !activeMatch ? (

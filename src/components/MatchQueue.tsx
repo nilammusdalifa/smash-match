@@ -29,7 +29,7 @@ import { computeFairShare, presentPlayers } from '../utils/fairness';
 // Horizontal on mobile (teams stack), vertical on desktop (teams sit side by side).
 const NetDivider: React.FC = () => (
   <div
-    className="h-[3px] w-full rounded-full bg-gradient-to-r from-slate-200 via-slate-600/30 to-slate-600/30 sm:h-auto sm:w-[3px] sm:self-stretch sm:bg-gradient-to-b sm:from-slate-200 sm:via-slate-600/30 sm:to-slate-600/30"
+    className="h-[3px] w-full rounded-full bg-gradient-to-r from-slate-200 light:from-slate-700 via-slate-600/30 light:via-slate-300/60 to-slate-600/30 light:to-slate-300/60 sm:h-auto sm:w-[3px] sm:self-stretch sm:bg-gradient-to-b sm:from-slate-200 sm:light:from-slate-700 sm:via-slate-600/30 sm:light:via-slate-300/60 sm:to-slate-600/30 sm:light:to-slate-300/60"
     aria-hidden="true"
   />
 );
@@ -314,15 +314,15 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header & Controls Bar */}
-      <div className="bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-800 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="bg-slate-900/80 light:bg-white/80 p-4 sm:p-5 rounded-2xl border border-slate-800 light:border-slate-200 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h2 className="text-base font-bold text-white flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-bold text-white light:text-slate-900 flex flex-wrap items-center gap-2">
             <span>Schedule</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 light:bg-slate-100 text-slate-300 light:text-slate-600 border border-slate-700 light:border-slate-300 font-mono">
               {session.matches.length} Total Matches
             </span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 light:text-slate-500 mt-1">
             Everyone rotates fairly across all rounds.
           </p>
         </div>
@@ -343,13 +343,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       </div>
 
       {/* Filter Tabs & Search */}
-      <div className="flex flex-col gap-3 bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
+      <div className="flex flex-col gap-3 bg-slate-950/60 light:bg-slate-50/60 p-3 rounded-2xl border border-slate-800 light:border-slate-200">
         {/* Status Filters */}
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar text-xs">
           <button
             onClick={() => setFilter('all')}
             className={`px-3 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
-              filter === 'all' ? 'bg-slate-800 text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+              filter === 'all' ? 'bg-slate-800 light:bg-slate-100 text-emerald-400 light:text-emerald-600 font-semibold' : 'text-slate-400 light:text-slate-500 hover:text-slate-200 light:hover:text-slate-900'
             }`}
           >
             All ({session.matches.length})
@@ -357,7 +357,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
           <button
             onClick={() => setFilter('in_progress')}
             className={`px-3 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
-              filter === 'in_progress' ? 'bg-slate-800 text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+              filter === 'in_progress' ? 'bg-slate-800 light:bg-slate-100 text-emerald-400 light:text-emerald-600 font-semibold' : 'text-slate-400 light:text-slate-500 hover:text-slate-200 light:hover:text-slate-900'
             }`}
           >
             Live ({session.matches.filter((m) => m.status === 'in_progress').length})
@@ -365,7 +365,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
           <button
             onClick={() => setFilter('scheduled')}
             className={`px-3 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
-              filter === 'scheduled' ? 'bg-slate-800 text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+              filter === 'scheduled' ? 'bg-slate-800 light:bg-slate-100 text-emerald-400 light:text-emerald-600 font-semibold' : 'text-slate-400 light:text-slate-500 hover:text-slate-200 light:hover:text-slate-900'
             }`}
           >
             Upcoming ({session.matches.filter((m) => m.status === 'scheduled').length})
@@ -373,7 +373,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
           <button
             onClick={() => setFilter('completed')}
             className={`px-3 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
-              filter === 'completed' ? 'bg-slate-800 text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+              filter === 'completed' ? 'bg-slate-800 light:bg-slate-100 text-emerald-400 light:text-emerald-600 font-semibold' : 'text-slate-400 light:text-slate-500 hover:text-slate-200 light:hover:text-slate-900'
             }`}
           >
             Completed ({session.matches.filter((m) => m.status === 'completed').length})
@@ -385,7 +385,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
           <select
             value={selectedRound}
             onChange={(e) => setSelectedRound(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-            className="bg-slate-900 text-slate-300 text-xs rounded-xl px-3 py-2.5 sm:py-1.5 border border-slate-700 focus:outline-none focus:border-emerald-500"
+            className="bg-slate-900 light:bg-white text-slate-300 light:text-slate-600 text-xs rounded-xl px-3 py-2.5 sm:py-1.5 border border-slate-700 light:border-slate-300 focus:outline-none focus:border-emerald-500"
           >
             <option value="all">All Rounds</option>
             {rounds.map((r) => (
@@ -396,13 +396,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
           </select>
 
           <div className="relative flex-1 sm:flex-none">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 light:text-slate-400" />
             <input
               type="text"
               placeholder="Search player..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-slate-900 text-slate-200 placeholder-slate-500 text-xs rounded-xl pl-8 pr-3 py-2.5 sm:py-1.5 border border-slate-700 focus:outline-none focus:border-emerald-500 w-full sm:w-44"
+              className="bg-slate-900 light:bg-white text-slate-200 light:text-slate-700 placeholder-slate-500 light:placeholder-slate-400 text-xs rounded-xl pl-8 pr-3 py-2.5 sm:py-1.5 border border-slate-700 light:border-slate-300 focus:outline-none focus:border-emerald-500 w-full sm:w-44"
             />
           </div>
         </div>
@@ -411,7 +411,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       {/* Match Cards List */}
       <div className="space-y-5">
         {filteredMatches.length === 0 ? (
-          <div className="text-center py-12 bg-slate-900/40 rounded-2xl border border-slate-800 text-slate-400">
+          <div className="text-center py-12 bg-slate-900/40 light:bg-white/40 rounded-2xl border border-slate-800 light:border-slate-200 text-slate-400 light:text-slate-500">
             <p className="text-sm">No matches match your filters.</p>
           </div>
         ) : (
@@ -424,7 +424,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                     The dot strip shows at a glance how far this round has
                     gotten without reading every card below it. */}
                 <div className="flex items-center justify-between px-1">
-                  <span className={`text-xs font-bold uppercase tracking-wider ${roundDone ? 'text-slate-500' : 'text-slate-300'}`}>
+                  <span className={`text-xs font-bold uppercase tracking-wider ${roundDone ? 'text-slate-500 light:text-slate-400' : 'text-slate-300 light:text-slate-600'}`}>
                     Round <span className="font-mono tabular-nums">{roundNum}</span>
                   </span>
                   <div className="flex items-center gap-1.5">
@@ -437,7 +437,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                             ? 'bg-emerald-500'
                             : rm.status === 'in_progress'
                             ? 'bg-amber-400 animate-pulse'
-                            : 'bg-slate-700 border border-slate-600'
+                            : 'bg-slate-700 light:bg-slate-200 border border-slate-600 light:border-slate-400'
                         }`}
                       />
                     ))}
@@ -468,10 +468,10 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                 id={`match-row-${m.id}`}
                 className={`p-4 sm:p-5 rounded-2xl border transition-all ${
                   isLive
-                    ? 'bg-slate-900/90 border-emerald-500/50 shadow-md shadow-emerald-950/20'
+                    ? 'bg-slate-900/90 light:bg-white/90 border-emerald-500/50 light:border-emerald-300 shadow-md shadow-emerald-950/20 light:shadow-emerald-200/20'
                     : isCompleted
-                    ? 'bg-slate-900/50 border-slate-800/80 opacity-90'
-                    : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                    ? 'bg-slate-900/50 light:bg-white/50 border-slate-800/80 light:border-slate-200/80 opacity-90'
+                    : 'bg-slate-900 light:bg-white border-slate-800 light:border-slate-200 hover:border-slate-700 light:hover:border-slate-300'
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -481,30 +481,30 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                       every row. Round is shown by the section header above
                       now, so this just needs the match number. */}
                   <div className="flex items-center space-x-3 shrink-0 sm:w-56">
-                    <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex flex-col items-center justify-center text-center shrink-0">
-                      <span className="text-[9px] font-bold text-slate-500 uppercase">Match</span>
-                      <span className="text-sm font-black text-white font-mono tabular-nums">#{m.matchNumber}</span>
+                    <div className="w-10 h-10 rounded-xl bg-slate-800 light:bg-slate-100 border border-slate-700 light:border-slate-300 flex flex-col items-center justify-center text-center shrink-0">
+                      <span className="text-[9px] font-bold text-slate-500 light:text-slate-400 uppercase">Match</span>
+                      <span className="text-sm font-black text-white light:text-slate-900 font-mono tabular-nums">#{m.matchNumber}</span>
                     </div>
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-slate-300">
+                        <span className="text-xs font-semibold text-slate-300 light:text-slate-600">
                           {m.courtName || 'Court 1'}
                         </span>
                         {isLive && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400 light:text-emerald-600 bg-emerald-500/10 light:bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-500/30 light:border-emerald-300">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live
                           </span>
                         )}
                         {isCompleted && (
-                          <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                          <span className="text-[10px] font-semibold text-slate-400 light:text-slate-500 bg-slate-800 light:bg-slate-100 px-2 py-0.5 rounded-full border border-slate-700 light:border-slate-300">
                             Completed
                           </span>
                         )}
                       </div>
 
                       {m.restingPlayerIds && m.restingPlayerIds.length > 0 && (
-                        <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+                        <div className="text-[11px] text-slate-400 light:text-slate-500 mt-0.5 truncate">
                           Resting: {session.players.filter((p) => m.restingPlayerIds?.includes(p.id)).map((p) => p.name).join(', ')}
                         </div>
                       )}
@@ -515,11 +515,11 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                   {!isSwapEditing && (
                   <div className="flex-1 flex flex-col sm:grid sm:grid-cols-11 gap-2 items-center text-center">
                     {/* Team 1 */}
-                    <div className={`w-full sm:col-span-4 p-2 rounded-xl border ${team1Won ? 'bg-emerald-950/30 border-emerald-500/40 font-bold' : 'bg-slate-950/40 border-slate-800/60'}`}>
-                      <div className="text-sm text-slate-200 truncate" title={m.team1.player1.name}>
+                    <div className={`w-full sm:col-span-4 p-2 rounded-xl border ${team1Won ? 'bg-emerald-950/30 light:bg-emerald-50 border-emerald-500/40 light:border-emerald-300 font-bold' : 'bg-slate-950/40 light:bg-slate-50/40 border-slate-800/60 light:border-slate-200/60'}`}>
+                      <div className="text-sm text-slate-200 light:text-slate-700 truncate" title={m.team1.player1.name}>
                         {m.team1.player1.name}
                       </div>
-                      <div className="text-sm text-slate-300 truncate font-semibold" title={m.team1.player2.name}>
+                      <div className="text-sm text-slate-300 light:text-slate-600 truncate font-semibold" title={m.team1.player2.name}>
                         {m.team1.player2.name}
                       </div>
                     </div>
@@ -534,35 +534,35 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                             max="30"
                             value={editT1}
                             onChange={(e) => setEditT1(Number(e.target.value))}
-                            className="w-12 h-9 text-center bg-slate-950 border border-emerald-500 rounded p-1 text-sm font-mono tabular-nums text-white"
+                            className="w-12 h-9 text-center bg-slate-950 light:bg-slate-50 border border-emerald-500 rounded p-1 text-sm font-mono tabular-nums text-white light:text-slate-900"
                           />
-                          <span className="text-slate-500">:</span>
+                          <span className="text-slate-500 light:text-slate-400">:</span>
                           <input
                             type="number"
                             min="0"
                             max="30"
                             value={editT2}
                             onChange={(e) => setEditT2(Number(e.target.value))}
-                            className="w-12 h-9 text-center bg-slate-950 border border-emerald-500 rounded p-1 text-sm font-mono tabular-nums text-white"
+                            className="w-12 h-9 text-center bg-slate-950 light:bg-slate-50 border border-emerald-500 rounded p-1 text-sm font-mono tabular-nums text-white light:text-slate-900"
                           />
                         </div>
                       ) : isCompleted || isLive ? (
-                        <div className="font-mono tabular-nums font-bold text-lg sm:text-xl text-white">
-                          <span className={team1Won ? 'text-emerald-400' : ''}>{m.score.team1Score}</span>
-                          <span className="text-slate-600 mx-1">-</span>
-                          <span className={team2Won ? 'text-emerald-400' : ''}>{m.score.team2Score}</span>
+                        <div className="font-mono tabular-nums font-bold text-lg sm:text-xl text-white light:text-slate-900">
+                          <span className={team1Won ? 'text-emerald-400 light:text-emerald-600' : ''}>{m.score.team1Score}</span>
+                          <span className="text-slate-600 light:text-slate-300 mx-1">-</span>
+                          <span className={team2Won ? 'text-emerald-400 light:text-emerald-600' : ''}>{m.score.team2Score}</span>
                         </div>
                       ) : (
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">VS</span>
+                        <span className="text-xs font-bold text-slate-500 light:text-slate-400 uppercase tracking-wider">VS</span>
                       )}
                     </div>
 
                     {/* Team 2 */}
-                    <div className={`w-full sm:col-span-4 p-2 rounded-xl border ${team2Won ? 'bg-emerald-950/30 border-emerald-500/40 font-bold' : 'bg-slate-950/40 border-slate-800/60'}`}>
-                      <div className="text-sm text-slate-200 truncate" title={m.team2.player1.name}>
+                    <div className={`w-full sm:col-span-4 p-2 rounded-xl border ${team2Won ? 'bg-emerald-950/30 light:bg-emerald-50 border-emerald-500/40 light:border-emerald-300 font-bold' : 'bg-slate-950/40 light:bg-slate-50/40 border-slate-800/60 light:border-slate-200/60'}`}>
+                      <div className="text-sm text-slate-200 light:text-slate-700 truncate" title={m.team2.player1.name}>
                         {m.team2.player1.name}
                       </div>
-                      <div className="text-sm text-slate-300 truncate font-semibold" title={m.team2.player2.name}>
+                      <div className="text-sm text-slate-300 light:text-slate-600 truncate font-semibold" title={m.team2.player2.name}>
                         {m.team2.player2.name}
                       </div>
                     </div>
@@ -573,11 +573,11 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                   {isSwapEditing && (
                     <div className="flex-1 grid grid-cols-2 gap-3 w-full">
                       <div className="space-y-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Team A</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 light:text-emerald-600">Team A</span>
                         <select
                           value={swapP1}
                           onChange={(e) => setSwapP1(e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200"
+                          className="w-full bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 rounded-lg p-1.5 text-xs text-slate-200 light:text-slate-700"
                         >
                           {swapOptions.map((p) => (
                             <option key={p.id} value={p.id}>{p.name}</option>
@@ -586,7 +586,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                         <select
                           value={swapP2}
                           onChange={(e) => setSwapP2(e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200"
+                          className="w-full bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 rounded-lg p-1.5 text-xs text-slate-200 light:text-slate-700"
                         >
                           {swapOptions.map((p) => (
                             <option key={p.id} value={p.id}>{p.name}</option>
@@ -594,11 +594,11 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                         </select>
                       </div>
                       <div className="space-y-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400">Team B</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400 light:text-teal-600">Team B</span>
                         <select
                           value={swapP3}
                           onChange={(e) => setSwapP3(e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200"
+                          className="w-full bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 rounded-lg p-1.5 text-xs text-slate-200 light:text-slate-700"
                         >
                           {swapOptions.map((p) => (
                             <option key={p.id} value={p.id}>{p.name}</option>
@@ -607,7 +607,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                         <select
                           value={swapP4}
                           onChange={(e) => setSwapP4(e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200"
+                          className="w-full bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 rounded-lg p-1.5 text-xs text-slate-200 light:text-slate-700"
                         >
                           {swapOptions.map((p) => (
                             <option key={p.id} value={p.id}>{p.name}</option>
@@ -625,7 +625,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                         <button
                           onClick={() => handleReshuffleMatch(m)}
                           title="Auto-suggest a fresh balanced matchup"
-                          className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs border border-emerald-500/30 cursor-pointer"
+                          className="p-2.5 rounded-lg bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-emerald-400 light:text-emerald-600 text-xs border border-emerald-500/30 light:border-emerald-300 cursor-pointer"
                         >
                           <Shuffle className="w-4 h-4" />
                         </button>
@@ -637,7 +637,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                         </button>
                         <button
                           onClick={() => setEditingSwapMatchId(null)}
-                          className="flex-1 sm:flex-none px-2.5 py-2 rounded-lg bg-slate-800 text-slate-400 text-xs hover:text-white cursor-pointer"
+                          className="flex-1 sm:flex-none px-2.5 py-2 rounded-lg bg-slate-800 light:bg-slate-100 text-slate-400 light:text-slate-500 text-xs hover:text-white light:hover:text-slate-900 cursor-pointer"
                         >
                           Cancel
                         </button>
@@ -652,7 +652,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                         </button>
                         <button
                           onClick={() => setEditingMatchId(null)}
-                          className="flex-1 sm:flex-none px-2.5 py-2 rounded-lg bg-slate-800 text-slate-400 text-xs hover:text-white cursor-pointer"
+                          className="flex-1 sm:flex-none px-2.5 py-2 rounded-lg bg-slate-800 light:bg-slate-100 text-slate-400 light:text-slate-500 text-xs hover:text-white light:hover:text-slate-900 cursor-pointer"
                         >
                           Cancel
                         </button>
@@ -665,14 +665,14 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                             <button
                               onClick={() => handleOpenSwapEditor(m)}
                               title="Swap players in this match"
-                              className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs border border-slate-700 cursor-pointer"
+                              className="p-2.5 rounded-lg bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-slate-300 light:text-slate-600 hover:text-white light:hover:text-slate-900 text-xs border border-slate-700 light:border-slate-300 cursor-pointer"
                             >
                               <Shuffle className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteMatchClick(m)}
                               title="Delete this match"
-                              className="p-2.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 text-xs border border-slate-700 hover:border-rose-500/40 cursor-pointer"
+                              className="p-2.5 rounded-lg bg-slate-800 light:bg-slate-100 hover:bg-rose-950/60 light:hover:bg-rose-100 text-slate-400 light:text-slate-500 hover:text-rose-400 light:hover:text-rose-600 text-xs border border-slate-700 light:border-slate-300 hover:border-rose-500/40 light:hover:border-rose-300 cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -686,7 +686,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                           <button
                             onClick={() => handleDeleteMatchClick(m)}
                             title="Delete this match"
-                            className="p-2.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 text-xs border border-slate-700 hover:border-rose-500/40 cursor-pointer"
+                            className="p-2.5 rounded-lg bg-slate-800 light:bg-slate-100 hover:bg-rose-950/60 light:hover:bg-rose-100 text-slate-400 light:text-slate-500 hover:text-rose-400 light:hover:text-rose-600 text-xs border border-slate-700 light:border-slate-300 hover:border-rose-500/40 light:hover:border-rose-300 cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -700,7 +700,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                             setEditT2(m.score.team2Score || Math.max(0, session.rules.pointsToWin - 3));
                           }}
                           title="Quick Score Entry"
-                          className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs border border-slate-700 cursor-pointer"
+                          className="p-2.5 rounded-lg bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-slate-300 light:text-slate-600 hover:text-white light:hover:text-slate-900 text-xs border border-slate-700 light:border-slate-300 cursor-pointer"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
@@ -717,7 +717,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                         ) : (
                           <button
                             onClick={() => onOpenScorekeeper(m)}
-                            className="flex-1 sm:flex-none px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold text-xs border border-emerald-500/30 flex items-center justify-center gap-1 cursor-pointer"
+                            className="flex-1 sm:flex-none px-3 py-2 rounded-lg bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-emerald-400 light:text-emerald-600 font-semibold text-xs border border-emerald-500/30 light:border-emerald-300 flex items-center justify-center gap-1 cursor-pointer"
                           >
                             <SlidersHorizontal className="w-3 h-3" />
                             <span>Score</span>
@@ -741,25 +741,25 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       {/* Custom Match Creator Modal */}
       {showCustomModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 light:border-slate-200 pb-3">
               <div>
-                <h3 className="text-base font-bold text-white">Create a Match</h3>
-                <p className="text-xs text-slate-400">Pick 4 players yourself, or let Auto Fill suggest a fair matchup.</p>
+                <h3 className="text-base font-bold text-white light:text-slate-900">Create a Match</h3>
+                <p className="text-xs text-slate-400 light:text-slate-500">Pick 4 players yourself, or let Auto Fill suggest a fair matchup.</p>
               </div>
               <button
                 onClick={() => setShowCustomModal(false)}
-                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+                className="p-1 rounded-lg bg-slate-800 light:bg-slate-100 text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900"
               >
                 ✕
               </button>
             </div>
 
             {/* Smart Auto Balance Helper */}
-            <div className="bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-xl space-y-2">
+            <div className="bg-emerald-950/30 light:bg-emerald-50 border border-emerald-500/30 light:border-emerald-300 p-3 rounded-xl space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center space-x-2 text-xs text-emerald-300 font-medium">
-                  <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="flex items-center space-x-2 text-xs text-emerald-300 light:text-emerald-700 font-medium">
+                  <Sparkles className="w-4 h-4 text-emerald-400 light:text-emerald-600 shrink-0" />
                   <span>Auto-Balance Pairs</span>
                 </div>
                 <button
@@ -771,12 +771,12 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                 </button>
               </div>
               {customCourtAvailability.presentCount < 4 ? (
-                <p className="text-[11px] text-amber-300/90 leading-snug">
+                <p className="text-[11px] text-amber-300/90 light:text-amber-600/90 leading-snug">
                   {`Only ${customCourtAvailability.presentCount} player${customCourtAvailability.presentCount === 1 ? '' : 's'} present — need at least 4 to fill a match.`}
                 </p>
               ) : (
                 customCourtAvailability.reused && (
-                  <p className="text-[11px] text-slate-400 leading-snug">
+                  <p className="text-[11px] text-slate-400 light:text-slate-500 leading-snug">
                     {`${customCourtName} already has ${customCourtAvailability.busyCount} of your ${customCourtAvailability.presentCount} present players queued next — this match will run after that one, reusing some of the same players.`}
                   </p>
                 )
@@ -786,17 +786,17 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
             {/* Team Selection */}
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:items-stretch">
               {/* Team A */}
-              <div className="space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Team A</span>
+              <div className="space-y-2 bg-slate-950/60 light:bg-slate-50/60 p-4 rounded-2xl border border-slate-800 light:border-slate-200">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 light:text-emerald-600">Team A</span>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 light:bg-slate-100 border border-slate-700 light:border-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-300 light:text-slate-600 shrink-0">
                       {initialsFor(customP1)}
                     </div>
                     <select
                       value={customP1}
                       onChange={(e) => setCustomP1(e.target.value)}
-                      className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
+                      className="flex-1 min-w-0 bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 rounded-xl p-2 text-xs text-slate-200 light:text-slate-700"
                     >
                       {session.players.map((p) => (
                         <option key={p.id} value={p.id} disabled={[customP2, customP3, customP4].includes(p.id)}>
@@ -807,13 +807,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                     </select>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 light:bg-slate-100 border border-slate-700 light:border-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-300 light:text-slate-600 shrink-0">
                       {initialsFor(customP2)}
                     </div>
                     <select
                       value={customP2}
                       onChange={(e) => setCustomP2(e.target.value)}
-                      className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
+                      className="flex-1 min-w-0 bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 rounded-xl p-2 text-xs text-slate-200 light:text-slate-700"
                     >
                       {session.players.map((p) => (
                         <option key={p.id} value={p.id} disabled={[customP1, customP3, customP4].includes(p.id)}>
@@ -829,17 +829,17 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
               <NetDivider />
 
               {/* Team B */}
-              <div className="space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-                <span className="text-xs font-bold uppercase tracking-wider text-teal-400">Team B</span>
+              <div className="space-y-2 bg-slate-950/60 light:bg-slate-50/60 p-4 rounded-2xl border border-slate-800 light:border-slate-200">
+                <span className="text-xs font-bold uppercase tracking-wider text-teal-400 light:text-teal-600">Team B</span>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 light:bg-slate-100 border border-slate-700 light:border-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-300 light:text-slate-600 shrink-0">
                       {initialsFor(customP3)}
                     </div>
                     <select
                       value={customP3}
                       onChange={(e) => setCustomP3(e.target.value)}
-                      className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
+                      className="flex-1 min-w-0 bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 rounded-xl p-2 text-xs text-slate-200 light:text-slate-700"
                     >
                       {session.players.map((p) => (
                         <option key={p.id} value={p.id} disabled={[customP1, customP2, customP4].includes(p.id)}>
@@ -850,13 +850,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                     </select>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 light:bg-slate-100 border border-slate-700 light:border-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-300 light:text-slate-600 shrink-0">
                       {initialsFor(customP4)}
                     </div>
                     <select
                       value={customP4}
                       onChange={(e) => setCustomP4(e.target.value)}
-                      className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
+                      className="flex-1 min-w-0 bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 rounded-xl p-2 text-xs text-slate-200 light:text-slate-700"
                     >
                       {session.players.map((p) => (
                         <option key={p.id} value={p.id} disabled={[customP1, customP2, customP3].includes(p.id)}>
@@ -872,24 +872,24 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
 
             {/* Match Preview */}
             {customP1 && customP2 && customP3 && customP4 && (
-              <div className="text-center text-xs bg-slate-950/40 rounded-xl py-2.5 border border-slate-800">
-                <span className="text-white font-semibold">
+              <div className="text-center text-xs bg-slate-950/40 light:bg-slate-50/40 rounded-xl py-2.5 border border-slate-800 light:border-slate-200">
+                <span className="text-white light:text-slate-900 font-semibold">
                   {nameFor(customP1)} & {nameFor(customP2)}
                 </span>
-                <span className="mx-2 text-slate-500 uppercase tracking-wider">vs</span>
-                <span className="text-white font-semibold">
+                <span className="mx-2 text-slate-500 light:text-slate-400 uppercase tracking-wider">vs</span>
+                <span className="text-white light:text-slate-900 font-semibold">
                   {nameFor(customP3)} & {nameFor(customP4)}
                 </span>
               </div>
             )}
 
             {/* Court Selection */}
-            <div className="flex items-center justify-between text-xs text-slate-300">
+            <div className="flex items-center justify-between text-xs text-slate-300 light:text-slate-600">
               <span>Assign to Court:</span>
               <select
                 value={customCourt}
                 onChange={(e) => setCustomCourt(e.target.value)}
-                className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200"
+                className="bg-slate-900 light:bg-white border border-slate-700 light:border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-200 light:text-slate-700"
               >
                 {session.courts.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -900,16 +900,16 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
             </div>
 
             {/* Modal Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 border-t border-slate-800 light:border-slate-200">
               <button
                 onClick={() => setShowCustomModal(false)}
-                className="px-4 py-2.5 sm:py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+                className="px-4 py-2.5 sm:py-2 rounded-xl bg-slate-800 light:bg-slate-100 text-slate-300 light:text-slate-600 text-xs font-semibold hover:bg-slate-700 light:hover:bg-slate-200"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateCustomMatch}
-                className="px-4 py-2.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-950"
+                className="px-4 py-2.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-950 light:shadow-emerald-200"
               >
                 Add Match to Schedule
               </button>

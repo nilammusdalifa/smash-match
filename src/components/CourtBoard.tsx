@@ -25,7 +25,7 @@ import {
 // on desktop (teams sit side by side).
 const NetDivider: React.FC = () => (
   <div
-    className="h-[3px] w-full rounded-full bg-gradient-to-r from-slate-200 via-slate-600/30 to-slate-600/30 sm:h-auto sm:w-[3px] sm:self-stretch sm:bg-gradient-to-b sm:from-slate-200 sm:via-slate-600/30 sm:to-slate-600/30"
+    className="h-[3px] w-full rounded-full bg-gradient-to-r from-slate-200 light:from-slate-700 via-slate-600/30 light:via-slate-300/60 to-slate-600/30 light:to-slate-300/60 sm:h-auto sm:w-[3px] sm:self-stretch sm:bg-gradient-to-b sm:from-slate-200 sm:light:from-slate-700 sm:via-slate-600/30 sm:light:via-slate-300/60 sm:to-slate-600/30 sm:light:to-slate-300/60"
     aria-hidden="true"
   />
 );
@@ -117,21 +117,21 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Overview & Quick Status */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-900/60 p-4 sm:p-5 rounded-2xl border border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-900/60 light:bg-white/60 p-4 sm:p-5 rounded-2xl border border-slate-800 light:border-slate-200">
         <div>
-          <h2 className="text-base font-bold text-white flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-bold text-white light:text-slate-900 flex flex-wrap items-center gap-2">
             <span>Live Courts</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 light:bg-emerald-50 text-emerald-400 light:text-emerald-600 border border-emerald-500/30 light:border-emerald-300">
               {session.courtCount} {session.courtCount === 1 ? 'Court Active' : 'Courts Active'}
             </span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 light:text-slate-500 mt-1">
             {session.players.length} players • {session.rules.pointsToWin} points to win (cap {session.rules.maxPointsCap})
           </p>
         </div>
 
         {/* Quick legend */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-400">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-400 light:text-slate-500">
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             Live on Court
@@ -141,7 +141,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
             On Deck (Next)
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-slate-600 light:bg-slate-400"></span>
             Resting
           </span>
         </div>
@@ -149,9 +149,9 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
 
       {/* Recent Results — quick access to what just finished, without opening Schedule */}
       {recentResults.length > 0 && (
-        <div className="bg-slate-900/60 p-3 sm:p-4 rounded-2xl border border-slate-800">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="bg-slate-900/60 light:bg-white/60 p-3 sm:p-4 rounded-2xl border border-slate-800 light:border-slate-200">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300 light:text-slate-600 uppercase tracking-wider mb-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 light:text-emerald-600" />
             <span>Recent Results</span>
           </div>
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -160,16 +160,16 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
               return (
                 <div
                   key={m.id}
-                  className="shrink-0 min-w-[240px] bg-slate-950/60 rounded-xl border border-slate-800/80 px-3 py-2 text-xs"
+                  className="shrink-0 min-w-[240px] bg-slate-950/60 light:bg-slate-50/60 rounded-xl border border-slate-800/80 light:border-slate-200/80 px-3 py-2 text-xs"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`truncate ${team1Won ? 'text-emerald-400 font-semibold' : 'text-slate-400'}`}>
+                    <span className={`truncate ${team1Won ? 'text-emerald-400 light:text-emerald-600 font-semibold' : 'text-slate-400 light:text-slate-500'}`}>
                       {m.team1.player1.name} & {m.team1.player2.name}
                     </span>
-                    <span className="font-mono font-bold text-white shrink-0">
+                    <span className="font-mono font-bold text-white light:text-slate-900 shrink-0">
                       {m.score.team1Score}-{m.score.team2Score}
                     </span>
-                    <span className={`truncate text-right ${!team1Won ? 'text-emerald-400 font-semibold' : 'text-slate-400'}`}>
+                    <span className={`truncate text-right ${!team1Won ? 'text-emerald-400 light:text-emerald-600 font-semibold' : 'text-slate-400 light:text-slate-500'}`}>
                       {m.team2.player1.name} & {m.team2.player2.name}
                     </span>
                   </div>
@@ -202,24 +202,24 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
             <div
               key={court.id}
               id={`court-card-${court.id}`}
-              className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between transition-all"
+              className="bg-slate-900 light:bg-white border border-slate-800 light:border-slate-200 rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between transition-all"
             >
               {/* Court Header */}
-              <div className="bg-slate-950/80 px-5 py-3.5 border-b border-slate-800/80 flex items-center justify-between">
+              <div className="bg-slate-950/80 light:bg-slate-50/80 px-5 py-3.5 border-b border-slate-800/80 light:border-slate-200/80 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-sm">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-600/20 light:bg-emerald-100 border border-emerald-500/30 light:border-emerald-300 flex items-center justify-center text-emerald-400 light:text-emerald-600 font-bold text-sm">
                     {court.id}
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white tracking-wide">{court.name}</h3>
+                    <h3 className="text-sm font-bold text-white light:text-slate-900 tracking-wide">{court.name}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
                       {activeMatch ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 light:text-emerald-600">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
                           Round {activeMatch.roundNumber} • Match #{activeMatch.matchNumber}
                         </span>
                       ) : (
-                        <span className="text-[11px] text-slate-500 font-medium">Available</span>
+                        <span className="text-[11px] text-slate-500 light:text-slate-400 font-medium">Available</span>
                       )}
                     </div>
                   </div>
@@ -227,8 +227,8 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
 
                 {activeMatch && (
                   <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-800/90 text-slate-300 text-xs font-mono tabular-nums border border-slate-700">
-                      <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                    <div className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-800/90 light:bg-slate-100/90 text-slate-300 light:text-slate-600 text-xs font-mono tabular-nums border border-slate-700 light:border-slate-300">
+                      <Clock className="w-3.5 h-3.5 text-emerald-400 light:text-emerald-600" />
                       <span>{formatDuration(activeMatch.startTime)}</span>
                     </div>
                   </div>
@@ -243,17 +243,17 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                         score directly, so that panel doesn't end up pushed
                         below the fold on a small screen. */}
                     {editingScoreMatchId !== activeMatch.id && (
-                    <div className="bg-slate-950/60 rounded-xl p-3 sm:p-4 border border-slate-800/80">
+                    <div className="bg-slate-950/60 light:bg-slate-50/60 rounded-xl p-3 sm:p-4 border border-slate-800/80 light:border-slate-200/80">
                       <div className="flex flex-col sm:grid sm:grid-cols-[4fr_auto_3fr_auto_4fr] gap-3 sm:gap-3 sm:items-stretch">
                         {/* Team 1 Box */}
-                        <div className="text-center bg-slate-900/90 p-3 rounded-xl border border-slate-800">
-                          <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+                        <div className="text-center bg-slate-900/90 light:bg-white/90 p-3 rounded-xl border border-slate-800 light:border-slate-200">
+                          <div className="text-xs font-semibold text-emerald-400 light:text-emerald-600 uppercase tracking-wider mb-1">
                             Team A
                           </div>
-                          <div className="text-sm font-bold text-white truncate" title={activeMatch.team1.player1.name}>
+                          <div className="text-sm font-bold text-white light:text-slate-900 truncate" title={activeMatch.team1.player1.name}>
                             {activeMatch.team1.player1.name}
                           </div>
-                          <div className="text-sm font-bold text-slate-300 truncate" title={activeMatch.team1.player2.name}>
+                          <div className="text-sm font-bold text-slate-300 light:text-slate-600 truncate" title={activeMatch.team1.player2.name}>
                             {activeMatch.team1.player2.name}
                           </div>
 
@@ -266,7 +266,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                                 const newScore = Math.max(0, activeMatch.score.team1Score - 1);
                                 onUpdateMatchScore(activeMatch.id, newScore, activeMatch.score.team2Score);
                               }}
-                              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs font-bold transition-all shrink-0"
+                              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-slate-300 light:text-slate-600 flex items-center justify-center text-xs font-bold transition-all shrink-0"
                             >
                               <Minus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                             </button>
@@ -289,19 +289,19 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
 
                         {/* Scores in the middle */}
                         <div className="text-center flex flex-col items-center justify-center">
-                          <div className="flex items-center justify-center space-x-1.5 font-mono tabular-nums font-black text-3xl sm:text-4xl text-white">
-                            <span className={activeMatch.score.team1Score >= session.rules.pointsToWin - 1 ? 'text-amber-400' : 'text-white'}>
+                          <div className="flex items-center justify-center space-x-1.5 font-mono tabular-nums font-black text-3xl sm:text-4xl text-white light:text-slate-900">
+                            <span className={activeMatch.score.team1Score >= session.rules.pointsToWin - 1 ? 'text-amber-400 light:text-amber-600' : 'text-white light:text-slate-900'}>
                               {activeMatch.score.team1Score}
                             </span>
-                            <span className="text-slate-600 text-2xl">:</span>
-                            <span className={activeMatch.score.team2Score >= session.rules.pointsToWin - 1 ? 'text-amber-400' : 'text-white'}>
+                            <span className="text-slate-600 light:text-slate-300 text-2xl">:</span>
+                            <span className={activeMatch.score.team2Score >= session.rules.pointsToWin - 1 ? 'text-amber-400 light:text-amber-600' : 'text-white light:text-slate-900'}>
                               {activeMatch.score.team2Score}
                             </span>
                           </div>
 
                           {/* Match Point Alert */}
                           {(activeMatch.score.team1Score >= session.rules.pointsToWin - 1 || activeMatch.score.team2Score >= session.rules.pointsToWin - 1) && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full mt-1 border border-amber-400/20 animate-pulse">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-amber-400 light:text-amber-600 bg-amber-400/10 light:bg-amber-100 px-2 py-0.5 rounded-full mt-1 border border-amber-400/20 light:border-amber-300 animate-pulse">
                               <Sparkles className="w-2.5 h-2.5" /> Match Point
                             </span>
                           )}
@@ -311,15 +311,15 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                             <button
                               id={`btn-open-scorekeeper-${activeMatch.id}`}
                               onClick={() => onOpenScorekeeper(activeMatch)}
-                              className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 hover:underline cursor-pointer py-1"
+                              className="text-xs text-emerald-400 light:text-emerald-600 hover:text-emerald-300 light:hover:text-emerald-700 font-medium flex items-center gap-1 hover:underline cursor-pointer py-1"
                             >
                               <Maximize2 className="w-3 h-3" /> Full Umpire Mode
                             </button>
-                            <span className="text-slate-700">•</span>
+                            <span className="text-slate-700 light:text-slate-300">•</span>
                             <button
                               id={`btn-enter-final-score-${activeMatch.id}`}
                               onClick={() => handleStartFinalScoreEntry(activeMatch)}
-                              className="text-xs text-slate-400 hover:text-slate-200 font-medium flex items-center gap-1 hover:underline cursor-pointer py-1"
+                              className="text-xs text-slate-400 light:text-slate-500 hover:text-slate-200 light:hover:text-slate-700 font-medium flex items-center gap-1 hover:underline cursor-pointer py-1"
                             >
                               <Edit3 className="w-3 h-3" /> Enter Final Score
                             </button>
@@ -330,14 +330,14 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                         <NetDivider />
 
                         {/* Team 2 Box */}
-                        <div className="text-center bg-slate-900/90 p-3 rounded-xl border border-slate-800">
-                          <div className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-1">
+                        <div className="text-center bg-slate-900/90 light:bg-white/90 p-3 rounded-xl border border-slate-800 light:border-slate-200">
+                          <div className="text-xs font-semibold text-teal-400 light:text-teal-600 uppercase tracking-wider mb-1">
                             Team B
                           </div>
-                          <div className="text-sm font-bold text-white truncate" title={activeMatch.team2.player1.name}>
+                          <div className="text-sm font-bold text-white light:text-slate-900 truncate" title={activeMatch.team2.player1.name}>
                             {activeMatch.team2.player1.name}
                           </div>
-                          <div className="text-sm font-bold text-slate-300 truncate" title={activeMatch.team2.player2.name}>
+                          <div className="text-sm font-bold text-slate-300 light:text-slate-600 truncate" title={activeMatch.team2.player2.name}>
                             {activeMatch.team2.player2.name}
                           </div>
 
@@ -350,7 +350,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                                 const newScore = Math.max(0, activeMatch.score.team2Score - 1);
                                 onUpdateMatchScore(activeMatch.id, activeMatch.score.team1Score, newScore);
                               }}
-                              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs font-bold transition-all shrink-0"
+                              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-slate-300 light:text-slate-600 flex items-center justify-center text-xs font-bold transition-all shrink-0"
                             >
                               <Minus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                             </button>
@@ -374,11 +374,11 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
 
                     {/* Quick Finish Match Button, or Direct Final-Score Entry */}
                     {!readOnly && (editingScoreMatchId === activeMatch.id ? (
-                      <div className="bg-slate-950/60 p-3 rounded-xl border border-emerald-500/40 space-y-3">
+                      <div className="bg-slate-950/60 light:bg-slate-50/60 p-3 rounded-xl border border-emerald-500/40 light:border-emerald-300 space-y-3">
                         <div className="flex items-center justify-center gap-3">
                           <div className="flex flex-col items-center gap-1">
-                            <span className="text-[10px] text-emerald-400 font-semibold uppercase">Team A</span>
-                            <span className="text-xs text-slate-300 text-center leading-tight">
+                            <span className="text-[10px] text-emerald-400 light:text-emerald-600 font-semibold uppercase">Team A</span>
+                            <span className="text-xs text-slate-300 light:text-slate-600 text-center leading-tight">
                               {activeMatch.team1.player1.name}<br />{activeMatch.team1.player2.name}
                             </span>
                             <input
@@ -389,13 +389,13 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               onChange={(e) => setEditScoreT1(e.target.value === '' ? 0 : Number(e.target.value))}
                               onFocus={(e) => e.target.select()}
                               placeholder="0"
-                              className="w-16 h-11 text-center bg-slate-900 border border-emerald-500/50 rounded-lg text-lg font-mono tabular-nums font-bold text-white focus:outline-none focus:border-emerald-500"
+                              className="w-16 h-11 text-center bg-slate-900 light:bg-white border border-emerald-500/50 light:border-emerald-400 rounded-lg text-lg font-mono tabular-nums font-bold text-white light:text-slate-900 focus:outline-none focus:border-emerald-500"
                             />
                           </div>
-                          <span className="text-slate-600 font-bold mt-4">-</span>
+                          <span className="text-slate-600 light:text-slate-300 font-bold mt-4">-</span>
                           <div className="flex flex-col items-center gap-1">
-                            <span className="text-[10px] text-teal-400 font-semibold uppercase">Team B</span>
-                            <span className="text-xs text-slate-300 text-center leading-tight">
+                            <span className="text-[10px] text-teal-400 light:text-teal-600 font-semibold uppercase">Team B</span>
+                            <span className="text-xs text-slate-300 light:text-slate-600 text-center leading-tight">
                               {activeMatch.team2.player1.name}<br />{activeMatch.team2.player2.name}
                             </span>
                             <input
@@ -406,14 +406,14 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               onChange={(e) => setEditScoreT2(e.target.value === '' ? 0 : Number(e.target.value))}
                               onFocus={(e) => e.target.select()}
                               placeholder="0"
-                              className="w-16 h-11 text-center bg-slate-900 border border-teal-500/50 rounded-lg text-lg font-mono tabular-nums font-bold text-white focus:outline-none focus:border-teal-500"
+                              className="w-16 h-11 text-center bg-slate-900 light:bg-white border border-teal-500/50 light:border-teal-400 rounded-lg text-lg font-mono tabular-nums font-bold text-white light:text-slate-900 focus:outline-none focus:border-teal-500"
                             />
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setEditingScoreMatchId(null)}
-                            className="flex-1 py-2 rounded-lg bg-slate-800 text-slate-400 text-xs font-semibold hover:text-white cursor-pointer"
+                            className="flex-1 py-2 rounded-lg bg-slate-800 light:bg-slate-100 text-slate-400 light:text-slate-500 text-xs font-semibold hover:text-white light:hover:text-slate-900 cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -441,7 +441,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               );
                             }
                           }}
-                          className="w-full py-2 px-4 rounded-xl bg-slate-800 hover:bg-emerald-950/40 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                          className="w-full py-2 px-4 rounded-xl bg-slate-800 light:bg-slate-100 hover:bg-emerald-950/40 light:hover:bg-emerald-50 text-emerald-400 light:text-emerald-600 hover:text-emerald-300 light:hover:text-emerald-700 border border-emerald-500/30 light:border-emerald-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                         >
                           <CheckCircle2 className="w-4 h-4" />
                           <span>Finish & Save Match Score</span>
@@ -451,10 +451,10 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
 
                     {/* Resting Players info if 8 players 1 court */}
                     {restingPlayerNames.length > 0 && (
-                      <div className="bg-slate-950/40 px-3.5 py-2.5 rounded-xl border border-slate-800/60 flex items-center gap-2 text-xs text-slate-400">
-                        <Coffee className="w-4 h-4 text-amber-400 shrink-0" />
-                        <span className="font-semibold text-slate-300">Resting Rotation:</span>
-                        <span className="text-slate-400 truncate">
+                      <div className="bg-slate-950/40 light:bg-slate-50/40 px-3.5 py-2.5 rounded-xl border border-slate-800/60 light:border-slate-200/60 flex items-center gap-2 text-xs text-slate-400 light:text-slate-500">
+                        <Coffee className="w-4 h-4 text-amber-400 light:text-amber-600 shrink-0" />
+                        <span className="font-semibold text-slate-300 light:text-slate-600">Resting Rotation:</span>
+                        <span className="text-slate-400 light:text-slate-500 truncate">
                           {restingPlayerNames.map((p) => p.name).join(', ')}
                         </span>
                       </div>
@@ -462,13 +462,13 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                   </div>
                 ) : (
                   /* Court is Idle */
-                  <div className="py-8 text-center bg-slate-950/40 rounded-xl border border-dashed border-slate-800 flex flex-col items-center justify-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500">
-                      <Play className="w-6 h-6 ml-0.5 text-emerald-400" />
+                  <div className="py-8 text-center bg-slate-950/40 light:bg-slate-50/40 rounded-xl border border-dashed border-slate-800 light:border-slate-200 flex flex-col items-center justify-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-slate-800/80 light:bg-slate-100/80 flex items-center justify-center text-slate-500 light:text-slate-400">
+                      <Play className="w-6 h-6 ml-0.5 text-emerald-400 light:text-emerald-600" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold text-white">Court is Ready</h4>
-                      <p className="text-xs text-slate-400 max-w-xs mt-0.5">
+                      <h4 className="text-sm font-semibold text-white light:text-slate-900">Court is Ready</h4>
+                      <p className="text-xs text-slate-400 light:text-slate-500 max-w-xs mt-0.5">
                         No match in progress yet.
                       </p>
                     </div>
@@ -476,7 +476,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                       <button
                         id={`btn-start-next-${court.id}`}
                         onClick={() => onStartMatch(nextMatch.id, court.id)}
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950 transition-all cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950 light:shadow-emerald-200 transition-all cursor-pointer"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
                         <span>Start Match #{nextMatch.matchNumber} (Round {nextMatch.roundNumber})</span>
@@ -486,14 +486,14 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                 )}
 
                 {/* Next Up / On Deck Section */}
-                <div className="mt-4 pt-4 border-t border-slate-800/80">
+                <div className="mt-4 pt-4 border-t border-slate-800/80 light:border-slate-200/80">
                   <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="font-bold text-slate-300 light:text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-amber-400 light:text-amber-600" />
                       Next Up (On Deck)
                     </span>
                     {nextMatch && (
-                      <span className="text-slate-400 font-mono text-[11px]">
+                      <span className="text-slate-400 light:text-slate-500 font-mono text-[11px]">
                         Round {nextMatch.roundNumber} • Match #{nextMatch.matchNumber}
                       </span>
                     )}
@@ -504,22 +504,22 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                     // "Court is Ready" block above already has the one Start
                     // button for this same match; a second one here would
                     // just be the same action twice.
-                    <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-xs">
-                      <div className="font-medium text-slate-200">
-                        <span className="text-emerald-400 font-semibold">{nextMatch.team1.player1.name} & {nextMatch.team1.player2.name}</span>
-                        <span className="text-slate-500 mx-1.5">vs</span>
-                        <span className="text-teal-400 font-semibold">{nextMatch.team2.player1.name} & {nextMatch.team2.player2.name}</span>
+                    <div className="bg-slate-950/80 light:bg-slate-50/80 p-3 rounded-xl border border-slate-800 light:border-slate-200 text-xs">
+                      <div className="font-medium text-slate-200 light:text-slate-700">
+                        <span className="text-emerald-400 light:text-emerald-600 font-semibold">{nextMatch.team1.player1.name} & {nextMatch.team1.player2.name}</span>
+                        <span className="text-slate-500 light:text-slate-400 mx-1.5">vs</span>
+                        <span className="text-teal-400 light:text-teal-600 font-semibold">{nextMatch.team2.player1.name} & {nextMatch.team2.player2.name}</span>
                       </div>
                     </div>
                   ) : suggestion && !activeMatch ? (
-                    <div className="bg-slate-950/60 border border-emerald-500/30 rounded-xl p-3 space-y-2">
-                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
-                        <Sparkles className="w-3 h-3 text-emerald-400" />
+                    <div className="bg-slate-950/60 light:bg-slate-50/60 border border-emerald-500/30 light:border-emerald-300 rounded-xl p-3 space-y-2">
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 light:text-slate-500">
+                        <Sparkles className="w-3 h-3 text-emerald-400 light:text-emerald-600" />
                         <span>Suggested — nothing queued for this court yet</span>
                       </div>
-                      <div className="text-xs text-slate-200">
+                      <div className="text-xs text-slate-200 light:text-slate-700">
                         {suggestion.split.t1[0].name} &amp; {suggestion.split.t1[1].name}
-                        <span className="text-slate-500 mx-1.5">vs</span>
+                        <span className="text-slate-500 light:text-slate-400 mx-1.5">vs</span>
                         {suggestion.split.t2[0].name} &amp; {suggestion.split.t2[1].name}
                       </div>
                       <button
@@ -537,7 +537,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                       </button>
                     </div>
                   ) : (
-                    <div className="text-xs text-slate-500 italic py-1 text-center bg-slate-950/40 rounded-lg">
+                    <div className="text-xs text-slate-500 light:text-slate-400 italic py-1 text-center bg-slate-950/40 light:bg-slate-50/40 rounded-lg">
                       All scheduled matches completed!
                     </div>
                   )}

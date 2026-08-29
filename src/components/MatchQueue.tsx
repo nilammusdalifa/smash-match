@@ -24,6 +24,16 @@ import {
 } from '../utils/scheduler';
 import { computeFairShare, presentPlayers } from '../utils/fairness';
 
+// A slim bar with a bright leading edge fading to a muted body — evoking a
+// badminton net's white top tape over its mesh — separating the two teams.
+// Horizontal on mobile (teams stack), vertical on desktop (teams sit side by side).
+const NetDivider: React.FC = () => (
+  <div
+    className="h-[3px] w-full rounded-full bg-gradient-to-r from-slate-200 via-slate-600/30 to-slate-600/30 sm:h-auto sm:w-[3px] sm:self-stretch sm:bg-gradient-to-b sm:from-slate-200 sm:via-slate-600/30 sm:to-slate-600/30"
+    aria-hidden="true"
+  />
+);
+
 interface MatchQueueProps {
   session: TournamentSession;
   onUpdateMatchScore: (matchId: string, team1Score: number, team2Score: number, isCompleted?: boolean) => void;
@@ -112,6 +122,12 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     onUpdateMatchScore(matchId, editT1, editT2, true);
     setEditingMatchId(null);
   };
+
+  // Custom match modal helpers: avatar initials, and disabling a player
+  // in one slot's dropdown once they're already picked in another slot.
+  const playerById = new Map<string, Player>(session.players.map((p) => [p.id, p]));
+  const initialsFor = (id: string) => playerById.get(id)?.name.substring(0, 2).toUpperCase() || '--';
+  const nameFor = (id: string) => playerById.get(id)?.name || '?';
 
   const handleCreateCustomMatch = () => {
     const playerMap = new Map<string, Player>(session.players.map((p) => [p.id, p]));
@@ -752,65 +768,105 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
               </button>
             </div>
 
-            {/* Team 1 Selection */}
-            <div className="space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Team A (Doubles Pair 1)</span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <select
-                  value={customP1}
-                  onChange={(e) => setCustomP1(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
-                >
-                  {session.players.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+            {/* Team Selection */}
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:items-stretch">
+              {/* Team A */}
+              <div className="space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Team A</span>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
+                      {initialsFor(customP1)}
+                    </div>
+                    <select
+                      value={customP1}
+                      onChange={(e) => setCustomP1(e.target.value)}
+                      className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
+                    >
+                      {session.players.map((p) => (
+                        <option key={p.id} value={p.id} disabled={[customP2, customP3, customP4].includes(p.id)}>
+                          {p.name}
+                          {p.skillLevel ? ` · Tier ${p.skillLevel}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
+                      {initialsFor(customP2)}
+                    </div>
+                    <select
+                      value={customP2}
+                      onChange={(e) => setCustomP2(e.target.value)}
+                      className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
+                    >
+                      {session.players.map((p) => (
+                        <option key={p.id} value={p.id} disabled={[customP1, customP3, customP4].includes(p.id)}>
+                          {p.name}
+                          {p.skillLevel ? ` · Tier ${p.skillLevel}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
 
-                <select
-                  value={customP2}
-                  onChange={(e) => setCustomP2(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
-                >
-                  {session.players.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+              <NetDivider />
+
+              {/* Team B */}
+              <div className="space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
+                <span className="text-xs font-bold uppercase tracking-wider text-teal-400">Team B</span>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
+                      {initialsFor(customP3)}
+                    </div>
+                    <select
+                      value={customP3}
+                      onChange={(e) => setCustomP3(e.target.value)}
+                      className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
+                    >
+                      {session.players.map((p) => (
+                        <option key={p.id} value={p.id} disabled={[customP1, customP2, customP4].includes(p.id)}>
+                          {p.name}
+                          {p.skillLevel ? ` · Tier ${p.skillLevel}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
+                      {initialsFor(customP4)}
+                    </div>
+                    <select
+                      value={customP4}
+                      onChange={(e) => setCustomP4(e.target.value)}
+                      className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
+                    >
+                      {session.players.map((p) => (
+                        <option key={p.id} value={p.id} disabled={[customP1, customP2, customP3].includes(p.id)}>
+                          {p.name}
+                          {p.skillLevel ? ` · Tier ${p.skillLevel}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Team 2 Selection */}
-            <div className="space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-400">Team B (Doubles Pair 2)</span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <select
-                  value={customP3}
-                  onChange={(e) => setCustomP3(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
-                >
-                  {session.players.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={customP4}
-                  onChange={(e) => setCustomP4(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200"
-                >
-                  {session.players.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+            {/* Match Preview */}
+            {customP1 && customP2 && customP3 && customP4 && (
+              <div className="text-center text-xs bg-slate-950/40 rounded-xl py-2.5 border border-slate-800">
+                <span className="text-white font-semibold">
+                  {nameFor(customP1)} & {nameFor(customP2)}
+                </span>
+                <span className="mx-2 text-slate-500 uppercase tracking-wider">vs</span>
+                <span className="text-white font-semibold">
+                  {nameFor(customP3)} & {nameFor(customP4)}
+                </span>
               </div>
-            </div>
+            )}
 
             {/* Court Selection */}
             <div className="flex items-center justify-between text-xs text-slate-300">

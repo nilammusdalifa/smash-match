@@ -35,8 +35,8 @@ export const AttendanceModal: React.FC<AttendanceModalProps> = ({
         </div>
 
         <p className="px-5 pt-3 text-xs text-slate-400">
-          Everyone starts as here. Mark anyone who hasn't arrived — they're
-          left out of matches until you mark them back.
+          Mark anyone who isn't here yet. They're skipped in the schedule
+          until you mark them back.
         </p>
 
         <div className="p-5 space-y-2 overflow-y-auto min-h-0">

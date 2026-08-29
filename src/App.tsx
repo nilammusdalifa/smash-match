@@ -20,7 +20,6 @@ import { Navbar } from './components/Navbar';
 import { CourtBoard } from './components/CourtBoard';
 import { MatchQueue } from './components/MatchQueue';
 import { Leaderboard } from './components/Leaderboard';
-import { PlayerMatrix } from './components/PlayerMatrix';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ScorekeeperModal } from './components/ScorekeeperModal';
 import { SessionSetupModal } from './components/SessionSetupModal';
@@ -91,7 +90,7 @@ export default function App() {
   const isReadOnlyPlayer = isRemoteMode && remoteRole === 'player';
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'settings'>('courts');
+  const [activeTab, setActiveTab] = useState<'courts' | 'schedule' | 'leaderboard' | 'settings'>('courts');
 
   // Modals state
   const [scorekeeperMatch, setScorekeeperMatch] = useState<Match | null>(null);
@@ -577,12 +576,6 @@ export default function App() {
           <Leaderboard
             session={session!}
             onSelectPlayer={(p) => setSelectedProfilePlayer(p)}
-          />
-        )}
-
-        {activeTab === 'synergy' && (
-          <PlayerMatrix
-            session={session!}
           />
         )}
 

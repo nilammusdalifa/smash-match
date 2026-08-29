@@ -260,7 +260,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Balanced rotation across all rounds.
+            Everyone rotates fairly across all rounds.
           </p>
         </div>
 
@@ -349,7 +349,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       <div className="space-y-3">
         {filteredMatches.length === 0 ? (
           <div className="text-center py-12 bg-slate-900/40 rounded-2xl border border-slate-800 text-slate-400">
-            <p className="text-sm">No matches found matching your filters.</p>
+            <p className="text-sm">No matches match your filters.</p>
           </div>
         ) : (
           filteredMatches.map((m) => {
@@ -646,8 +646,8 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
           <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
-                <h3 className="text-base font-bold text-white">Create Custom Doubles Match</h3>
-                <p className="text-xs text-slate-400">Assemble pairs manually, or auto-balance for a fair matchup.</p>
+                <h3 className="text-base font-bold text-white">Create a Match</h3>
+                <p className="text-xs text-slate-400">Pick 4 players yourself, or let Auto Fill suggest a fair matchup.</p>
               </div>
               <button
                 onClick={() => setShowCustomModal(false)}

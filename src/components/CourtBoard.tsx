@@ -208,7 +208,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                           Round {activeMatch.roundNumber} • Match #{activeMatch.matchNumber}
                         </span>
                       ) : (
-                        <span className="text-[11px] text-slate-500 font-medium">Court Available / Idle</span>
+                        <span className="text-[11px] text-slate-500 font-medium">Available</span>
                       )}
                     </div>
                   </div>

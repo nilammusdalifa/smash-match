@@ -2,7 +2,6 @@ import React from 'react';
 import { TournamentSession } from '../types/badminton';
 import {
   Trophy,
-  Users,
   Calendar,
   Grid,
   Settings2,
@@ -10,8 +9,8 @@ import {
 
 interface NavbarProps {
   session: TournamentSession;
-  activeTab: 'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'settings';
-  setActiveTab: (tab: 'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'settings') => void;
+  activeTab: 'courts' | 'schedule' | 'leaderboard' | 'settings';
+  setActiveTab: (tab: 'courts' | 'schedule' | 'leaderboard' | 'settings') => void;
   /** Player (view-only) mode: hides everything that mutates the session. */
   readOnly?: boolean;
   /**
@@ -84,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <nav className="grid grid-cols-5 gap-1 sm:flex sm:gap-0 sm:space-x-2 sm:overflow-x-auto sm:no-scrollbar py-2 border-t border-slate-800/80 text-xs font-medium">
+        <nav className={`grid ${readOnly ? 'grid-cols-3' : 'grid-cols-4'} gap-1 sm:flex sm:gap-0 sm:space-x-2 sm:overflow-x-auto sm:no-scrollbar py-2 border-t border-slate-800/80 text-xs font-medium`}>
           <button
             id="tab-courts"
             onClick={() => setActiveTab('courts')}
@@ -130,22 +129,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="text-[11px] sm:text-xs">
               <span className="sm:hidden">Ranks</span>
               <span className="hidden sm:inline">Rankings</span>
-            </span>
-          </button>
-
-          <button
-            id="tab-synergy"
-            onClick={() => setActiveTab('synergy')}
-            className={`flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-1 sm:px-3 py-2 rounded-lg whitespace-nowrap transition-all ${
-              activeTab === 'synergy'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
-          >
-            <Users className="w-5 h-5 sm:w-4 sm:h-4" />
-            <span className="text-[11px] sm:text-xs">
-              <span className="sm:hidden">Synergy</span>
-              <span className="hidden sm:inline">Synergy</span>
             </span>
           </button>
 

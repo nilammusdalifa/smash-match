@@ -133,7 +133,7 @@ export const PartnerRequestsModal: React.FC<PartnerRequestsModalProps> = ({
         </div>
 
         <p className="px-5 pt-3 text-xs text-slate-400">
-          Each pair gets put together once, as early as both are here.
+          They'll play together once, as soon as both are here.
         </p>
 
         <div className="p-5 space-y-3 overflow-y-auto min-h-0">

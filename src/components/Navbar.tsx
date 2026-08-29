@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { TournamentSession } from '../types/badminton';
 import { AttendanceModal } from './AttendanceModal';
 import { PartnerRequestsModal } from './PartnerRequestsModal';
+import { AddPlayerModal } from './AddPlayerModal';
+import { ChangeCourtsModal } from './ChangeCourtsModal';
 import {
   Trophy,
   Plus,
@@ -56,23 +58,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
   const [showAddPlayer, setShowAddPlayer] = useState<boolean>(false);
-  const [newPlayerName, setNewPlayerName] = useState<string>('');
-  const [newPlayerTier, setNewPlayerTier] = useState<'A' | 'B' | 'C'>('B');
   const [showChangeCourts, setShowChangeCourts] = useState<boolean>(false);
-  const [selectedCourtCount, setSelectedCourtCount] = useState<number | null>(null);
-  const [newCourtNameInputs, setNewCourtNameInputs] = useState<string[]>([]);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const [showAttendance, setShowAttendance] = useState<boolean>(false);
   const [showRequests, setShowRequests] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const handleConfirmAddPlayer = () => {
-    if (!newPlayerName.trim()) return;
-    onAddPlayer(newPlayerName, newPlayerTier);
-    setNewPlayerName('');
-    setNewPlayerTier('B');
-    setShowAddPlayer(false);
-  };
 
   // Close the "more options" dropdown when clicking anywhere outside it
   useEffect(() => {
@@ -368,66 +358,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
       </div>
 
-      {/* Add Player Modal — portaled to <body> because this header uses
-          backdrop-blur, and a CSS filter/backdrop-filter on any ancestor
-          creates a new containing block for position:fixed descendants,
-          which would center this modal inside the header's own small box
-          instead of the full viewport (cutting off its top edge). */}
       {showAddPlayer && createPortal(
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white">Add Player</h3>
-              <button
-                onClick={() => setShowAddPlayer(false)}
-                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            <p className="text-xs text-slate-400">
-              Joining mid-session re-balances every match that hasn't been played yet.
-            </p>
-            <input
-              type="text"
-              autoFocus
-              value={newPlayerName}
-              onChange={(e) => setNewPlayerName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleConfirmAddPlayer()}
-              placeholder="Player name"
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
-            />
-            <div className="flex items-center gap-2">
-              {(['A', 'B', 'C'] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setNewPlayerTier(t)}
-                  className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                    newPlayerTier === t
-                      ? 'bg-emerald-600 border-emerald-500 text-white'
-                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Tier {t}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-              <button
-                onClick={() => setShowAddPlayer(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmAddPlayer}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-950"
-              >
-                Add to Session
-              </button>
-            </div>
-          </div>
-        </div>,
+        <AddPlayerModal onAddPlayer={onAddPlayer} onClose={() => setShowAddPlayer(false)} />,
         document.body
       )}
 
@@ -449,101 +381,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         document.body
       )}
 
-      {/* Change Courts Modal — also portaled, see the note above. */}
       {showChangeCourts && createPortal(
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white">Change Courts</h3>
-              <button
-                onClick={() => {
-                  setShowChangeCourts(false);
-                  setSelectedCourtCount(null);
-                }}
-                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            <p className="text-xs text-slate-400">
-              Re-balances every match that hasn't been played yet. A court
-              with a live match on it can't be removed until that match is
-              finished or moved.
-            </p>
-            <div className="grid grid-cols-5 gap-1.5">
-              {[1, 2, 3, 4, 6].map((cnt) => (
-                <button
-                  key={cnt}
-                  onClick={() => {
-                    if (cnt <= session.courtCount) {
-                      onUpdateCourtCount(cnt);
-                      setShowChangeCourts(false);
-                      setSelectedCourtCount(null);
-                    } else {
-                      // Adding courts — collect a name for each new one
-                      // before applying, so "Court 8" doesn't end up as a
-                      // generic "Court 2".
-                      setSelectedCourtCount(cnt);
-                      setNewCourtNameInputs(Array.from({ length: cnt - session.courtCount }, () => ''));
-                    }
-                  }}
-                  className={`py-2.5 rounded-xl font-bold text-xs border transition-all cursor-pointer ${
-                    (selectedCourtCount ?? session.courtCount) === cnt
-                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950'
-                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  {cnt}
-                </button>
-              ))}
-            </div>
-
-            {selectedCourtCount !== null && selectedCourtCount > session.courtCount && (
-              <div className="space-y-2 pt-1">
-                <p className="text-[11px] text-slate-400">
-                  Name the new court{newCourtNameInputs.length > 1 ? 's' : ''}:
-                </p>
-                {newCourtNameInputs.map((val, i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    value={val}
-                    onChange={(e) =>
-                      setNewCourtNameInputs((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
-                    }
-                    placeholder={`Court ${session.courtCount + i + 1}`}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                  />
-                ))}
-                <button
-                  onClick={() => {
-                    const fullNames = Array.from({ length: selectedCourtCount }, (_, i) =>
-                      i < session.courtCount ? '' : newCourtNameInputs[i - session.courtCount] || ''
-                    );
-                    onUpdateCourtCount(selectedCourtCount, fullNames);
-                    setShowChangeCourts(false);
-                    setSelectedCourtCount(null);
-                  }}
-                  className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer"
-                >
-                  Apply
-                </button>
-              </div>
-            )}
-
-            <div className="flex items-center justify-end pt-2 border-t border-slate-800">
-              <button
-                onClick={() => {
-                  setShowChangeCourts(false);
-                  setSelectedCourtCount(null);
-                }}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>,
+        <ChangeCourtsModal
+          session={session}
+          onUpdateCourtCount={onUpdateCourtCount}
+          onClose={() => setShowChangeCourts(false)}
+        />,
         document.body
       )}
 

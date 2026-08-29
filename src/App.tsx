@@ -21,7 +21,7 @@ import { CourtBoard } from './components/CourtBoard';
 import { MatchQueue } from './components/MatchQueue';
 import { Leaderboard } from './components/Leaderboard';
 import { PlayerMatrix } from './components/PlayerMatrix';
-import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { SettingsPanel } from './components/SettingsPanel';
 import { ScorekeeperModal } from './components/ScorekeeperModal';
 import { SessionSetupModal } from './components/SessionSetupModal';
 import { PlayerProfileModal } from './components/PlayerProfileModal';
@@ -91,7 +91,7 @@ export default function App() {
   const isReadOnlyPlayer = isRemoteMode && remoteRole === 'player';
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'analytics'>('courts');
+  const [activeTab, setActiveTab] = useState<'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'settings'>('courts');
 
   // Modals state
   const [scorekeeperMatch, setScorekeeperMatch] = useState<Match | null>(null);
@@ -542,12 +542,6 @@ export default function App() {
         session={session!}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onOpenNewSessionModal={() => setShowSetupModal(true)}
-        onResetSession={handleResetSession}
-        onAddPlayer={handleAddPlayer}
-        onUpdateCourtCount={handleUpdateCourtCount}
-        onSetPlayerPresence={handleSetPlayerPresence}
-        onSetRequestedPairs={handleSetRequestedPairs}
         readOnly={isReadOnlyPlayer}
         hideSessionControls={isRemoteMode}
       />
@@ -592,9 +586,16 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'analytics' && (
-          <AnalyticsDashboard
+        {activeTab === 'settings' && !isReadOnlyPlayer && (
+          <SettingsPanel
             session={session!}
+            onAddPlayer={handleAddPlayer}
+            onSetPlayerPresence={handleSetPlayerPresence}
+            onSetRequestedPairs={handleSetRequestedPairs}
+            onUpdateCourtCount={handleUpdateCourtCount}
+            onOpenNewSessionModal={() => setShowSetupModal(true)}
+            onResetSession={handleResetSession}
+            hideSessionControls={isRemoteMode}
           />
         )}
       </main>

@@ -228,7 +228,10 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
               <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                 {activeMatch ? (
                   <div className="space-y-4">
-                    {/* Live Match Scoreboard */}
+                    {/* Live Match Scoreboard — hidden while entering a final
+                        score directly, so that panel doesn't end up pushed
+                        below the fold on a small screen. */}
+                    {editingScoreMatchId !== activeMatch.id && (
                     <div className="bg-slate-950/60 rounded-xl p-3 sm:p-4 border border-slate-800/80">
                       <div className="flex flex-col sm:grid sm:grid-cols-11 gap-3 sm:gap-2 sm:items-center">
                         {/* Team 1 Box */}
@@ -352,6 +355,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                         </div>
                       </div>
                     </div>
+                    )}
 
                     {/* Quick Finish Match Button, or Direct Final-Score Entry */}
                     {!readOnly && (editingScoreMatchId === activeMatch.id ? (
@@ -359,6 +363,9 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                         <div className="flex items-center justify-center gap-3">
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] text-emerald-400 font-semibold uppercase">Team A</span>
+                            <span className="text-xs text-slate-300 text-center leading-tight">
+                              {activeMatch.team1.player1.name}<br />{activeMatch.team1.player2.name}
+                            </span>
                             <input
                               type="number"
                               min="0"
@@ -371,6 +378,9 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                           <span className="text-slate-600 font-bold mt-4">-</span>
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] text-teal-400 font-semibold uppercase">Team B</span>
+                            <span className="text-xs text-slate-300 text-center leading-tight">
+                              {activeMatch.team2.player1.name}<br />{activeMatch.team2.player2.name}
+                            </span>
                             <input
                               type="number"
                               min="0"

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { CourtNotification } from '../types/badminton';
 import { Bell, X, Sparkles, Coffee, Play, Trophy } from 'lucide-react';
 
-const AUTO_DISMISS_MS = 5000;
+const AUTO_DISMISS_MS = 3000;
 
 interface NotificationsBannerProps {
   notifications: CourtNotification[];

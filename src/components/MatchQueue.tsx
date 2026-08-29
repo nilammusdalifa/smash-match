@@ -187,9 +187,15 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   // literal single best) so clicking again after a suggestion you don't
   // want actually gives you something different, instead of the same
   // deterministic answer every time.
-  const handleAutoBalanceCustom = () => {
+  // Shared by Auto Fill and Reshuffle: who's free to fill a match on this
+  // court right now. "Busy" only means queued in the tail (most recent)
+  // round of THIS court's schedule — not "has some other match somewhere
+  // in the rotation," which is nearly everyone, always (each court has one
+  // match per round for the whole rotation). Surfaced to the modal too, so
+  // the shortfall is visible before Auto Fill is clicked, not after.
+  const getAvailableForCourt = (courtId: string, excludeMatchId?: string) => {
     const scheduledOnThisCourt = session.matches.filter(
-      (m) => m.status === 'scheduled' && m.courtId === customCourt
+      (m) => m.status === 'scheduled' && m.courtId === courtId && m.id !== excludeMatchId
     );
     const tailRound = scheduledOnThisCourt.length > 0
       ? Math.max(...scheduledOnThisCourt.map((m) => m.roundNumber))
@@ -199,9 +205,13 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
         .filter((m) => m.roundNumber === tailRound)
         .flatMap((m) => [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id])
     );
-    const available = presentPlayers(session.players, Date.now(), session.createdAt).filter(
-      (p) => !busyOnThisCourt.has(p.id)
-    );
+    const present = presentPlayers(session.players, Date.now(), session.createdAt);
+    const available = present.filter((p) => !busyOnThisCourt.has(p.id));
+    return { available, presentCount: present.length, busyCount: busyOnThisCourt.size };
+  };
+
+  const handleAutoBalanceCustom = () => {
+    const { available } = getAvailableForCourt(customCourt);
     if (available.length < 4) {
       alert('Not enough present players free for this court to auto-fill 4.');
       return;
@@ -241,28 +251,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   };
 
   const handleReshuffleMatch = (m: Match) => {
-    // Same reasoning as Auto Fill above: don't treat "has some other
-    // upcoming match in the schedule" as busy (that's nearly everyone,
-    // always — each court has one match per round for the whole rotation).
-    // Only exclude away players and players in whatever else is queued at
-    // the tail of this court's schedule (excluding m itself) — the same
-    // narrow definition Auto Fill uses, so reshuffling a just-created
-    // custom match doesn't immediately re-offer players already booked
-    // into another custom match added right after it on the same court.
-    const scheduledOnThisCourt = session.matches.filter(
-      (o) => o.id !== m.id && o.status === 'scheduled' && o.courtId === m.courtId
-    );
-    const tailRound = scheduledOnThisCourt.length > 0
-      ? Math.max(...scheduledOnThisCourt.map((o) => o.roundNumber))
-      : null;
-    const busyOnThisCourt = new Set(
-      scheduledOnThisCourt
-        .filter((o) => o.roundNumber === tailRound)
-        .flatMap((o) => [o.team1.player1.id, o.team1.player2.id, o.team2.player1.id, o.team2.player2.id])
-    );
-    const available = presentPlayers(session.players, Date.now(), session.createdAt).filter(
-      (p) => !busyOnThisCourt.has(p.id)
-    );
+    const { available } = getAvailableForCourt(m.courtId, m.id);
     if (available.length < 4) {
       alert('Not enough present players to reshuffle.');
       return;
@@ -309,6 +298,12 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       onDeleteMatch(m.id);
     }
   };
+
+  // Recomputed on every render so it tracks the court currently selected in
+  // the Custom Match modal, surfacing the shortfall before Auto Fill is
+  // clicked rather than only after.
+  const customCourtAvailability = getAvailableForCourt(customCourt);
+  const customCourtName = session.courts.find((c) => c.id === customCourt)?.name || `Court ${customCourt}`;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -755,17 +750,27 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
             </div>
 
             {/* Smart Auto Balance Helper */}
-            <div className="bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-xl flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center space-x-2 text-xs text-emerald-300 font-medium">
-                <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Auto-Balance Pairs</span>
+            <div className="bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-xl space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 text-xs text-emerald-300 font-medium">
+                  <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Auto-Balance Pairs</span>
+                </div>
+                <button
+                  onClick={handleAutoBalanceCustom}
+                  disabled={customCourtAvailability.available.length < 4}
+                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-600"
+                >
+                  <Zap className="w-3 h-3" /> Auto Fill 4
+                </button>
               </div>
-              <button
-                onClick={handleAutoBalanceCustom}
-                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
-              >
-                <Zap className="w-3 h-3" /> Auto Fill 4
-              </button>
+              {customCourtAvailability.available.length < 4 && (
+                <p className="text-[11px] text-amber-300/90 leading-snug">
+                  {customCourtAvailability.presentCount < 4
+                    ? `Only ${customCourtAvailability.presentCount} player${customCourtAvailability.presentCount === 1 ? '' : 's'} present — need at least 4 to fill a match.`
+                    : `${customCourtName} already has ${customCourtAvailability.busyCount} of your ${customCourtAvailability.presentCount} present players queued for its next match — only ${customCourtAvailability.available.length} left free. Pick a different court, or edit that match instead.`}
+                </p>
+              )}
             </div>
 
             {/* Team Selection */}

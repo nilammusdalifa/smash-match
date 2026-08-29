@@ -16,7 +16,6 @@ import {
 import { auth, ensureAnonymousAuth } from './utils/firebase';
 import { recomputeAllRatings } from './utils/ranking';
 import { generateId, regenerateRemainingSchedule } from './utils/scheduler';
-import { soundManager } from './utils/audio';
 import { Navbar } from './components/Navbar';
 import { CourtBoard } from './components/CourtBoard';
 import { MatchQueue } from './components/MatchQueue';
@@ -104,11 +103,10 @@ export default function App() {
 
   // Helper to add toast notification
   const addNotification = useCallback((
-    title: string, 
-    message: string, 
-    courtName: string, 
-    type: CourtNotification['type'],
-    speechText?: string
+    title: string,
+    message: string,
+    courtName: string,
+    type: CourtNotification['type']
   ) => {
     const newNotif: CourtNotification = {
       id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
@@ -118,13 +116,8 @@ export default function App() {
       type,
       timestamp: Date.now(),
       read: false,
-      speechText,
     };
     setNotifications((prev) => [newNotif, ...prev.slice(0, 9)]);
-
-    if (speechText) {
-      soundManager.announce(speechText);
-    }
   }, []);
 
   // Update match score
@@ -191,8 +184,7 @@ export default function App() {
           'Match Concluded',
           `${winNames} won ${Math.max(team1Score, team2Score)}-${Math.min(team1Score, team2Score)}`,
           targetMatch.courtName || 'Court 1',
-          'match_completed',
-          `Match finished on ${targetMatch.courtName || 'Court 1'}. Winners: ${winNames}.`
+          'match_completed'
         );
       }
       return;
@@ -239,7 +231,6 @@ export default function App() {
     setSession(nextSession);
     persistSession(nextSession);
 
-    soundManager.playCourtChime();
     const p1 = targetMatch.team1.player1.name;
     const p2 = targetMatch.team1.player2.name;
     const p3 = targetMatch.team2.player1.name;
@@ -250,8 +241,7 @@ export default function App() {
       'Match Starting',
       `${courtLabel}: ${p1} & ${p2} vs ${p3} & ${p4}`,
       courtLabel,
-      'match_start',
-      `Match starting on ${courtLabel}. ${p1} and ${p2} versus ${p3} and ${p4}. Ready, play!`
+      'match_start'
     );
   };
 
@@ -316,13 +306,11 @@ export default function App() {
     setSession(nextSession);
     persistSession(nextSession);
 
-    soundManager.playCourtChime();
     addNotification(
       'Match Starting',
       `${newMatch.courtName}: ${p1.name} & ${p2.name} vs ${p3.name} & ${p4.name}`,
       newMatch.courtName!,
-      'match_start',
-      `Match starting on ${newMatch.courtName}. ${p1.name} and ${p2.name} versus ${p3.name} and ${p4.name}. Ready, play!`
+      'match_start'
     );
   };
 
@@ -509,7 +497,6 @@ export default function App() {
   const handleSessionCreated = (newSession: TournamentSession) => {
     setSession(newSession);
     setActiveTab('courts');
-    soundManager.playFanfare();
     confetti({
       particleCount: 70,
       spread: 60,

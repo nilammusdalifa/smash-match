@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { TournamentSession, Match, Court } from '../types/badminton';
-import { soundManager } from '../utils/audio';
 import {
   pickBestAvailableFoursome,
   computePartnerCounts,
@@ -11,7 +10,6 @@ import { computeFairShare, presentPlayers } from '../utils/fairness';
 import {
   Play,
   CheckCircle2,
-  Bell,
   Clock,
   Maximize2,
   Users,
@@ -55,7 +53,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
   };
 
   const handleSaveFinalScore = (matchId: string) => {
-    soundManager.playFanfare();
     onUpdateMatchScore(matchId, editScoreT1, editScoreT2, true);
     setEditingScoreMatchId(null);
   };
@@ -73,13 +70,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
     const mins = Math.floor(elapsed / 60);
     const secs = elapsed % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleCallToCourt = (court: Court, match: Match) => {
-    soundManager.playCourtChime();
-    const t1 = `${match.team1.player1.name} and ${match.team1.player2.name}`;
-    const t2 = `${match.team2.player1.name} and ${match.team2.player2.name}`;
-    soundManager.announce(`Attention please. ${court.name}. Match round ${match.roundNumber}. ${t1} versus ${t2}. Please proceed to the court!`);
   };
 
   // Most recently finished matches, newest first — quick access without digging into Schedule
@@ -230,15 +220,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                       <Clock className="w-3.5 h-3.5 text-emerald-400" />
                       <span>{formatDuration(activeMatch.startTime)}</span>
                     </div>
-
-                    <button
-                      id={`btn-call-court-${court.id}`}
-                      onClick={() => handleCallToCourt(court, activeMatch)}
-                      title="Announce Court Assignment"
-                      className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 transition-all cursor-pointer"
-                    >
-                      <Bell className="w-4 h-4" />
-                    </button>
                   </div>
                 )}
               </div>
@@ -279,7 +260,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               id={`btn-add-t1-${activeMatch.id}`}
                               onClick={() => {
                                 const newScore = activeMatch.score.team1Score + 1;
-                                soundManager.playPointChime(1);
                                 const isWin = newScore >= session.rules.pointsToWin && (newScore - activeMatch.score.team2Score >= 2 || newScore >= session.rules.maxPointsCap);
                                 onUpdateMatchScore(activeMatch.id, newScore, activeMatch.score.team2Score, isWin);
                               }}
@@ -360,7 +340,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               id={`btn-add-t2-${activeMatch.id}`}
                               onClick={() => {
                                 const newScore = activeMatch.score.team2Score + 1;
-                                soundManager.playPointChime(2);
                                 const isWin = newScore >= session.rules.pointsToWin && (newScore - activeMatch.score.team1Score >= 2 || newScore >= session.rules.maxPointsCap);
                                 onUpdateMatchScore(activeMatch.id, activeMatch.score.team1Score, newScore, isWin);
                               }}
@@ -425,7 +404,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                           id={`btn-finish-match-${activeMatch.id}`}
                           onClick={() => {
                             if (confirm(`Finish match with score ${activeMatch.score.team1Score} - ${activeMatch.score.team2Score}?`)) {
-                              soundManager.playFanfare();
                               onUpdateMatchScore(
                                 activeMatch.id,
                                 activeMatch.score.team1Score,
@@ -503,16 +481,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => {
-                            soundManager.playCourtChime();
-                            soundManager.announce(`${court.name} on deck: ${nextMatch.team1.player1.name}, ${nextMatch.team1.player2.name} versus ${nextMatch.team2.player1.name}, ${nextMatch.team2.player2.name}. Please warm up!`);
-                          }}
-                          title="Alert On-Deck Players"
-                          className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition-all cursor-pointer"
-                        >
-                          <Bell className="w-4 h-4" />
-                        </button>
                         {!activeMatch && !readOnly && (
                           <button
                             onClick={() => onStartMatch(nextMatch.id, court.id)}

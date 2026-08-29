@@ -1,13 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { TournamentSession } from '../types/badminton';
-import { soundManager } from '../utils/audio';
 import { AttendanceModal } from './AttendanceModal';
 import { PartnerRequestsModal } from './PartnerRequestsModal';
 import {
   Trophy,
-  Volume2,
-  VolumeX,
   Plus,
   RotateCcw,
   MoreVertical,
@@ -56,7 +53,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   readOnly = false,
   hideSessionControls = false,
 }) => {
-  const [soundOn, setSoundOn] = useState<boolean>(soundManager.isSoundEnabled());
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
   const [showAddPlayer, setShowAddPlayer] = useState<boolean>(false);
@@ -89,16 +85,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu]);
-
-  const toggleSound = () => {
-    const next = !soundOn;
-    soundManager.setSoundEnabled(next);
-    soundManager.setSpeechEnabled(next);
-    setSoundOn(next);
-    if (next) {
-      soundManager.playPointChime(1);
-    }
-  };
 
   const handleShareLiveLink = () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?view=${session.id}`;
@@ -162,20 +148,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Actions & Utilities */}
           <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
-            {/* Audio Toggle */}
-            <button
-              id="btn-toggle-sound"
-              onClick={toggleSound}
-              title={soundOn ? 'Sound & Announcements Enabled' : 'Muted'}
-              className={`p-2.5 sm:p-2 rounded-lg border transition-all ${
-                soundOn
-                  ? 'bg-slate-800 text-emerald-400 border-emerald-500/30 hover:bg-slate-700'
-                  : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-300'
-              }`}
-            >
-              {soundOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </button>
-
             {/* Share Live Link + PIN (organizer + umpire only) */}
             {!readOnly && (
               <div className="hidden md:flex items-center space-x-2">

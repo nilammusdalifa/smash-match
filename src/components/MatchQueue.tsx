@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { TournamentSession, Match, Player } from '../types/badminton';
-import { soundManager } from '../utils/audio';
 import {
   CheckCircle2,
   Play,
@@ -102,7 +101,6 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
 
   const handleSaveQuickScore = (matchId: string) => {
     onUpdateMatchScore(matchId, editT1, editT2, true);
-    soundManager.playPointChime(1);
     setEditingMatchId(null);
   };
 
@@ -143,7 +141,6 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
 
     onAddCustomMatch(newMatch);
     setShowCustomModal(false);
-    soundManager.playCourtChime();
   };
 
   // Smart Balanced Matchmaking suggestion — picks 4 players and splits them

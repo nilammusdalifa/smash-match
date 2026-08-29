@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Match, GameRules } from '../types/badminton';
-import { soundManager } from '../utils/audio';
 import confetti from 'canvas-confetti';
 import {
   X,
@@ -9,7 +8,6 @@ import {
   Trophy,
   Sparkles,
   ShieldAlert,
-  Volume2,
   CheckCircle2
 } from 'lucide-react';
 
@@ -59,7 +57,6 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
   const addPoint = (team: 1 | 2) => {
     if (isGameOver) return;
 
-    soundManager.playPointChime(team);
     let nextT1 = t1Score;
     let nextT2 = t2Score;
 
@@ -75,27 +72,16 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
     setScoreHistory((prev) => [...prev, { t1: nextT1, t2: nextT2, server: team }]);
     onUpdateScore(match.id, nextT1, nextT2);
 
-    // Announce score
-    const serverScore = team === 1 ? nextT1 : nextT2;
-    const receiverScore = team === 1 ? nextT2 : nextT1;
-    
     // Check win condition
     const t1Wins = nextT1 >= targetScore && (nextT1 - nextT2 >= 2 || nextT1 >= maxCap);
     const t2Wins = nextT2 >= targetScore && (nextT2 - nextT1 >= 2 || nextT2 >= maxCap);
 
     if (t1Wins || t2Wins) {
-      soundManager.playFanfare();
       confetti({
         particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
       });
-      const winnerName = t1Wins 
-        ? `${match.team1.player1.name} and ${match.team1.player2.name}`
-        : `${match.team2.player1.name} and ${match.team2.player2.name}`;
-      soundManager.announce(`Game! Won by ${winnerName}. Score: ${nextT1} to ${nextT2}.`);
-    } else if (nextT1 >= targetScore - 1 || nextT2 >= targetScore - 1) {
-      soundManager.announce(`Match Point! ${serverScore} serving ${receiverScore}.`);
     }
   };
 
@@ -112,12 +98,9 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
 
   const handleSwapEnds = () => {
     setSwappedEnds(!swappedEnds);
-    soundManager.playWhistle();
-    soundManager.announce("Change ends.");
   };
 
   const handleFinishMatch = () => {
-    soundManager.playFanfare();
     confetti({
       particleCount: 100,
       spread: 80,
@@ -162,13 +145,6 @@ export const ScorekeeperModal: React.FC<ScorekeeperModalProps> = ({
           </div>
 
           <div className="flex items-center space-x-2 shrink-0">
-            <button
-              onClick={() => soundManager.announce(`Score is ${t1Score} to ${t2Score}.`)}
-              title="Speak Current Score"
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 transition-all cursor-pointer"
-            >
-              <Volume2 className="w-4 h-4" />
-            </button>
             <button
               onClick={onClose}
               className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-all cursor-pointer"

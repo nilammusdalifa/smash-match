@@ -23,10 +23,6 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
   onSessionCreated,
 }) => {
   const [name, setName] = useState<string>('Friday Night Social Doubles');
-  const [venue, setVenue] = useState<string>('');
-  const [eventDate, setEventDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [startTime, setStartTime] = useState<string>('');
-  const [endTime, setEndTime] = useState<string>('');
   const [courtCount, setCourtCount] = useState<number>(1);
   const [courtNames, setCourtNames] = useState<string[]>([]);
   const [pointsToWin, setPointsToWin] = useState<number>(30);
@@ -114,8 +110,7 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
       players,
       courtCount,
       rules,
-      Array.from({ length: courtCount }, (_, i) => ({ name: courtNameAt(i) })),
-      { venue: venue.trim() || undefined, date: eventDate, startTime: startTime || undefined, endTime: endTime || undefined }
+      Array.from({ length: courtCount }, (_, i) => ({ name: courtNameAt(i) }))
     );
 
     onSessionCreated(newSession);
@@ -159,40 +154,6 @@ export const SessionSetupModal: React.FC<SessionSetupModalProps> = ({
               placeholder="e.g. Friday Night 8-Player Doubles"
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
             />
-          </div>
-
-          {/* Venue & Time */}
-          <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3">
-            <label className="text-xs font-bold text-white uppercase tracking-wider block">
-              Venue & Time
-            </label>
-            <input
-              type="text"
-              value={venue}
-              onChange={(e) => setVenue(e.target.value)}
-              placeholder="Venue or hall name (optional)"
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <input
-                type="date"
-                value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-              />
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-              />
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-              />
-            </div>
           </div>
 
           {/* Court Count & Architecture Scalability Slider */}

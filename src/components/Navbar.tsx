@@ -43,6 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const progressPercent = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0;
 
   return (
+    <>
     <header id="app-header" className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-slate-100 shadow-md">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-16 gap-2">
@@ -107,72 +108,117 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
 
-        {/* Tab Navigation */}
-        <nav className={`grid ${readOnly ? 'grid-cols-3' : 'grid-cols-4'} gap-1 sm:flex sm:gap-0 sm:space-x-2 sm:overflow-x-auto sm:no-scrollbar py-2 border-t border-slate-800/80 text-xs font-medium`}>
+        {/* Desktop/tablet tab strip — the mobile bottom nav below replaces
+            this on small screens. */}
+        <nav className={`hidden sm:flex sm:space-x-2 py-2 border-t border-slate-800/80 text-xs font-medium`}>
           <button
-            id="tab-courts"
+            id="tab-courts-desktop"
             onClick={() => setActiveTab('courts')}
-            className={`flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-1 sm:px-3 py-2 rounded-lg whitespace-nowrap transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg whitespace-nowrap transition-all ${
               activeTab === 'courts'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <Grid className="w-5 h-5 sm:w-4 sm:h-4" />
-            <span className="text-[11px] sm:text-xs">
-              <span className="sm:hidden">Courts</span>
-              <span className="hidden sm:inline">Live Courts ({session.courtCount})</span>
-            </span>
+            <Grid className="w-4 h-4" />
+            <span>Live Courts ({session.courtCount})</span>
           </button>
 
           <button
-            id="tab-schedule"
+            id="tab-schedule-desktop"
             onClick={() => setActiveTab('schedule')}
-            className={`flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-1 sm:px-3 py-2 rounded-lg whitespace-nowrap transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg whitespace-nowrap transition-all ${
               activeTab === 'schedule'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <Calendar className="w-5 h-5 sm:w-4 sm:h-4" />
-            <span className="text-[11px] sm:text-xs">
-              <span className="sm:hidden">Schedule</span>
-              <span className="hidden sm:inline">Schedule</span>
-            </span>
+            <Calendar className="w-4 h-4" />
+            <span>Schedule</span>
           </button>
 
           <button
-            id="tab-leaderboard"
+            id="tab-leaderboard-desktop"
             onClick={() => setActiveTab('leaderboard')}
-            className={`flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-1 sm:px-3 py-2 rounded-lg whitespace-nowrap transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg whitespace-nowrap transition-all ${
               activeTab === 'leaderboard'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <Trophy className="w-5 h-5 sm:w-4 sm:h-4" />
-            <span className="text-[11px] sm:text-xs">
-              <span className="sm:hidden">Ranks</span>
-              <span className="hidden sm:inline">Rankings</span>
-            </span>
+            <Trophy className="w-4 h-4" />
+            <span>Rankings</span>
           </button>
 
           {!readOnly && (
             <button
-              id="tab-settings"
+              id="tab-settings-desktop"
               onClick={() => setActiveTab('settings')}
-              className={`flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-1 sm:px-3 py-2 rounded-lg whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg whitespace-nowrap transition-all ${
                 activeTab === 'settings'
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
-              <Settings2 className="w-5 h-5 sm:w-4 sm:h-4" />
-              <span className="text-[11px] sm:text-xs">Settings</span>
+              <Settings2 className="w-4 h-4" />
+              <span>Settings</span>
             </button>
           )}
         </nav>
       </div>
     </header>
+
+    {/* Mobile-only fixed bottom tab bar — hidden from sm and up, where the
+        desktop tab strip above takes over instead. */}
+    <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 shadow-[0_-4px_12px_rgba(0,0,0,0.3)] pb-[env(safe-area-inset-bottom)]">
+      <div className={`max-w-7xl mx-auto px-2 grid ${readOnly ? 'grid-cols-3' : 'grid-cols-4'}`}>
+        <button
+          id="tab-courts"
+          onClick={() => setActiveTab('courts')}
+          className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-all ${
+            activeTab === 'courts' ? 'text-emerald-300' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Grid className="w-5 h-5" />
+          <span className="text-[11px] font-medium">Courts</span>
+        </button>
+
+        <button
+          id="tab-schedule"
+          onClick={() => setActiveTab('schedule')}
+          className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-all ${
+            activeTab === 'schedule' ? 'text-emerald-300' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Calendar className="w-5 h-5" />
+          <span className="text-[11px] font-medium">Schedule</span>
+        </button>
+
+        <button
+          id="tab-leaderboard"
+          onClick={() => setActiveTab('leaderboard')}
+          className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-all ${
+            activeTab === 'leaderboard' ? 'text-emerald-300' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Trophy className="w-5 h-5" />
+          <span className="text-[11px] font-medium">Ranks</span>
+        </button>
+
+        {!readOnly && (
+          <button
+            id="tab-settings"
+            onClick={() => setActiveTab('settings')}
+            className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-all ${
+              activeTab === 'settings' ? 'text-emerald-300' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Settings2 className="w-5 h-5" />
+            <span className="text-[11px] font-medium">Settings</span>
+          </button>
+        )}
+      </div>
+    </nav>
+    </>
   );
 };

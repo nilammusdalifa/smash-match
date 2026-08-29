@@ -50,10 +50,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Brand & Session Info */}
           <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shadow-inner shrink-0">
+              {/* A shuttlecock in flight — cork base, flared feather skirt,
+                  and two short trailing lines suggesting motion — in place
+                  of a generic globe icon that had nothing to do with the
+                  sport this app is actually for. */}
               <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-                <path d="M2 12h20" />
+                <path d="M1.5 8 Q3.5 8 4.8 9.5" opacity="0.45" />
+                <path d="M1 12.5 Q3.2 12.5 4.5 14.3" opacity="0.45" />
+                <path d="M12 15L6.5 5" />
+                <path d="M12 15L11 4.3" />
+                <path d="M12 15L13.5 4.3" />
+                <path d="M12 15L18 5" />
+                <path d="M6.5 5Q12 2.5 18 5" />
+                <circle cx="12" cy="17.5" r="2.3" fill="currentColor" stroke="none" />
               </svg>
             </div>
             <div className="min-w-0">

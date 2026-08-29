@@ -87,17 +87,17 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       return pNames.includes(q);
     }
     return true;
-  }).sort((a, b) => {
-    // Completed matches sink to the bottom (stable sort keeps everything
-    // else in its original round/match order — this is a no-op when the
-    // filter already shows only one status, e.g. "Completed" alone).
-    const aCompleted = a.status === 'completed' ? 1 : 0;
-    const bCompleted = b.status === 'completed' ? 1 : 0;
-    return aCompleted - bCompleted;
-  });
+  }).sort((a, b) => a.roundNumber - b.roundNumber || a.matchNumber - b.matchNumber);
 
-  // Group matches by round for nice structural view
+  // Group matches by round for the round filter dropdown, and for
+  // sectioning the list below — a round-robin schedule's natural unit is
+  // the round, not a flat sequence of individual matches.
   const rounds = Array.from(new Set<number>(session.matches.map((m) => m.roundNumber))).sort((a: number, b: number) => a - b);
+  const matchesByRound = new Map<number, Match[]>();
+  filteredMatches.forEach((m) => {
+    if (!matchesByRound.has(m.roundNumber)) matchesByRound.set(m.roundNumber, []);
+    matchesByRound.get(m.roundNumber)!.push(m);
+  });
 
   const handleSaveQuickScore = (matchId: string) => {
     onUpdateMatchScore(matchId, editT1, editT2, true);
@@ -383,13 +383,43 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       </div>
 
       {/* Match Cards List */}
-      <div className="space-y-3">
+      <div className="space-y-5">
         {filteredMatches.length === 0 ? (
           <div className="text-center py-12 bg-slate-900/40 rounded-2xl border border-slate-800 text-slate-400">
             <p className="text-sm">No matches match your filters.</p>
           </div>
         ) : (
-          filteredMatches.map((m) => {
+          Array.from(matchesByRound.entries()).map(([roundNum, roundMatches]) => {
+            const roundDone = roundMatches.every((rm) => rm.status === 'completed');
+            return (
+              <div key={roundNum} className="space-y-2.5">
+                {/* Round header — a round-robin schedule's natural unit is
+                    the round, not a flat sequence of individual matches.
+                    The dot strip shows at a glance how far this round has
+                    gotten without reading every card below it. */}
+                <div className="flex items-center justify-between px-1">
+                  <span className={`text-xs font-bold uppercase tracking-wider ${roundDone ? 'text-slate-500' : 'text-slate-300'}`}>
+                    Round <span className="font-mono tabular-nums">{roundNum}</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {roundMatches.map((rm) => (
+                      <span
+                        key={rm.id}
+                        title={rm.status === 'completed' ? 'Completed' : rm.status === 'in_progress' ? 'Live' : 'Upcoming'}
+                        className={`w-2 h-2 rounded-full shrink-0 ${
+                          rm.status === 'completed'
+                            ? 'bg-emerald-500'
+                            : rm.status === 'in_progress'
+                            ? 'bg-amber-400 animate-pulse'
+                            : 'bg-slate-700 border border-slate-600'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                {roundMatches.map((m) => {
             const isEditing = editingMatchId === m.id;
             const isSwapEditing = editingSwapMatchId === m.id;
             const isCompleted = m.status === 'completed';
@@ -419,14 +449,15 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                  {/* Match Info & Round — fixed width so the Resting list's
-                      length doesn't steal variable space from the team
-                      boxes below, which would make them a different width
-                      on every row. */}
+                  {/* Match Info — fixed width so the Resting list's length
+                      doesn't steal variable space from the team boxes
+                      below, which would make them a different width on
+                      every row. Round is shown by the section header above
+                      now, so this just needs the match number. */}
                   <div className="flex items-center space-x-3 shrink-0 sm:w-56">
                     <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex flex-col items-center justify-center text-center shrink-0">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">R{m.roundNumber}</span>
-                      <span className="text-xs font-black text-white">#{m.matchNumber}</span>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase">Match</span>
+                      <span className="text-sm font-black text-white font-mono tabular-nums">#{m.matchNumber}</span>
                     </div>
 
                     <div className="min-w-0">
@@ -477,7 +508,7 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                             max="30"
                             value={editT1}
                             onChange={(e) => setEditT1(Number(e.target.value))}
-                            className="w-12 h-9 text-center bg-slate-950 border border-emerald-500 rounded p-1 text-sm font-mono text-white"
+                            className="w-12 h-9 text-center bg-slate-950 border border-emerald-500 rounded p-1 text-sm font-mono tabular-nums text-white"
                           />
                           <span className="text-slate-500">:</span>
                           <input
@@ -486,11 +517,11 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                             max="30"
                             value={editT2}
                             onChange={(e) => setEditT2(Number(e.target.value))}
-                            className="w-12 h-9 text-center bg-slate-950 border border-emerald-500 rounded p-1 text-sm font-mono text-white"
+                            className="w-12 h-9 text-center bg-slate-950 border border-emerald-500 rounded p-1 text-sm font-mono tabular-nums text-white"
                           />
                         </div>
                       ) : isCompleted || isLive ? (
-                        <div className="font-mono font-bold text-lg sm:text-xl text-white">
+                        <div className="font-mono tabular-nums font-bold text-lg sm:text-xl text-white">
                           <span className={team1Won ? 'text-emerald-400' : ''}>{m.score.team1Score}</span>
                           <span className="text-slate-600 mx-1">-</span>
                           <span className={team2Won ? 'text-emerald-400' : ''}>{m.score.team2Score}</span>
@@ -670,6 +701,10 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                     )}
                   </div>
                   )}
+                </div>
+              </div>
+            );
+                })}
                 </div>
               </div>
             );

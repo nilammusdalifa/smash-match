@@ -19,6 +19,17 @@ import {
   Edit3
 } from 'lucide-react';
 
+// A slim bar with a bright leading edge fading to a muted body — evoking a
+// badminton net's white top tape over its mesh — separating the two teams
+// from the score between them. Horizontal on mobile (teams stack), vertical
+// on desktop (teams sit side by side).
+const NetDivider: React.FC = () => (
+  <div
+    className="h-[3px] w-full rounded-full bg-gradient-to-r from-slate-200 via-slate-600/30 to-slate-600/30 sm:h-auto sm:w-[3px] sm:self-stretch sm:bg-gradient-to-b sm:from-slate-200 sm:via-slate-600/30 sm:to-slate-600/30"
+    aria-hidden="true"
+  />
+);
+
 interface CourtBoardProps {
   session: TournamentSession;
   onUpdateMatchScore: (matchId: string, team1Score: number, team2Score: number, isCompleted?: boolean) => void;
@@ -216,7 +227,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
 
                 {activeMatch && (
                   <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-800/90 text-slate-300 text-xs font-mono border border-slate-700">
+                    <div className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-800/90 text-slate-300 text-xs font-mono tabular-nums border border-slate-700">
                       <Clock className="w-3.5 h-3.5 text-emerald-400" />
                       <span>{formatDuration(activeMatch.startTime)}</span>
                     </div>
@@ -233,9 +244,9 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                         below the fold on a small screen. */}
                     {editingScoreMatchId !== activeMatch.id && (
                     <div className="bg-slate-950/60 rounded-xl p-3 sm:p-4 border border-slate-800/80">
-                      <div className="flex flex-col sm:grid sm:grid-cols-11 gap-3 sm:gap-2 sm:items-center">
+                      <div className="flex flex-col sm:grid sm:grid-cols-[4fr_auto_3fr_auto_4fr] gap-3 sm:gap-3 sm:items-stretch">
                         {/* Team 1 Box */}
-                        <div className="sm:col-span-4 text-center bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                        <div className="text-center bg-slate-900/90 p-3 rounded-xl border border-slate-800">
                           <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
                             Team A
                           </div>
@@ -274,9 +285,11 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                           )}
                         </div>
 
+                        <NetDivider />
+
                         {/* Scores in the middle */}
-                        <div className="sm:col-span-3 text-center flex flex-col items-center justify-center">
-                          <div className="flex items-center justify-center space-x-1.5 font-mono font-black text-3xl sm:text-4xl text-white">
+                        <div className="text-center flex flex-col items-center justify-center">
+                          <div className="flex items-center justify-center space-x-1.5 font-mono tabular-nums font-black text-3xl sm:text-4xl text-white">
                             <span className={activeMatch.score.team1Score >= session.rules.pointsToWin - 1 ? 'text-amber-400' : 'text-white'}>
                               {activeMatch.score.team1Score}
                             </span>
@@ -314,8 +327,10 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                           )}
                         </div>
 
+                        <NetDivider />
+
                         {/* Team 2 Box */}
-                        <div className="sm:col-span-4 text-center bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                        <div className="text-center bg-slate-900/90 p-3 rounded-xl border border-slate-800">
                           <div className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-1">
                             Team B
                           </div>
@@ -374,7 +389,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               onChange={(e) => setEditScoreT1(e.target.value === '' ? 0 : Number(e.target.value))}
                               onFocus={(e) => e.target.select()}
                               placeholder="0"
-                              className="w-16 h-11 text-center bg-slate-900 border border-emerald-500/50 rounded-lg text-lg font-mono font-bold text-white focus:outline-none focus:border-emerald-500"
+                              className="w-16 h-11 text-center bg-slate-900 border border-emerald-500/50 rounded-lg text-lg font-mono tabular-nums font-bold text-white focus:outline-none focus:border-emerald-500"
                             />
                           </div>
                           <span className="text-slate-600 font-bold mt-4">-</span>
@@ -391,7 +406,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               onChange={(e) => setEditScoreT2(e.target.value === '' ? 0 : Number(e.target.value))}
                               onFocus={(e) => e.target.select()}
                               placeholder="0"
-                              className="w-16 h-11 text-center bg-slate-900 border border-teal-500/50 rounded-lg text-lg font-mono font-bold text-white focus:outline-none focus:border-teal-500"
+                              className="w-16 h-11 text-center bg-slate-900 border border-teal-500/50 rounded-lg text-lg font-mono tabular-nums font-bold text-white focus:outline-none focus:border-teal-500"
                             />
                           </div>
                         </div>

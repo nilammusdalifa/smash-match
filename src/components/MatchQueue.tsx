@@ -87,7 +87,16 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
       return pNames.includes(q);
     }
     return true;
-  }).sort((a, b) => a.roundNumber - b.roundNumber || a.matchNumber - b.matchNumber);
+  }).sort((a, b) => {
+    // Rounds stay in ascending order (that's what makes the section
+    // grouping below make sense). Within a round, completed matches sink
+    // to the bottom, below whatever's still live or upcoming.
+    if (a.roundNumber !== b.roundNumber) return a.roundNumber - b.roundNumber;
+    const aDone = a.status === 'completed' ? 1 : 0;
+    const bDone = b.status === 'completed' ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    return a.matchNumber - b.matchNumber;
+  });
 
   // Group matches by round for the round filter dropdown, and for
   // sectioning the list below — a round-robin schedule's natural unit is

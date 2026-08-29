@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Dark is the default look (matches every existing unprefixed color
+   class); light mode is opt-in via a `.light` class on <html>, so the
+   default experience never depends on this variant existing at all. */
+@custom-variant light (&:where(.light, .light *));
+
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;

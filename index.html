@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,8 +8,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script>
+      // Applied before first paint so a saved light-mode preference doesn't
+      // flash dark first — React's own theme effect (App.tsx) runs too late
+      // for that. Dark stays the default when nothing's saved.
+      if (localStorage.getItem('smashmatch_theme') === 'light') {
+        document.documentElement.classList.add('light');
+      }
+    </script>
   </head>
-  <body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen">
+  <body class="bg-slate-950 text-slate-100 light:bg-white light:text-slate-900 font-sans antialiased min-h-screen">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

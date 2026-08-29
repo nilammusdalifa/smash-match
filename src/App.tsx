@@ -29,6 +29,23 @@ import { RolePickerModal } from './components/RolePickerModal';
 import confetti from 'canvas-confetti';
 
 export default function App() {
+  // Dark is the only theme that existed before this, so it stays the
+  // default for anyone who's never touched the toggle — light mode is
+  // opt-in and only takes effect once the `light` class lands on <html>.
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('smashmatch_theme');
+    return saved === 'light' ? 'light' : 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', theme === 'light');
+    localStorage.setItem('smashmatch_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  }, []);
+
   // Wait for silent anonymous auth before doing anything session-related,
   // so every device has a uid by the time it creates or claims a session.
   const [authReady, setAuthReady] = useState<boolean>(false);
@@ -505,8 +522,8 @@ export default function App() {
 
   if (!authReady) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-slate-400 text-sm">Loading...</div>
+      <div className="min-h-screen bg-slate-950 light:bg-white flex items-center justify-center">
+        <div className="text-slate-400 light:text-slate-500 text-sm">Loading...</div>
       </div>
     );
   }
@@ -517,8 +534,8 @@ export default function App() {
 
   if (isRemoteMode && !session) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-slate-400 text-sm">Connecting to live session...</div>
+      <div className="min-h-screen bg-slate-950 light:bg-white flex items-center justify-center">
+        <div className="text-slate-400 light:text-slate-500 text-sm">Connecting to live session...</div>
       </div>
     );
   }
@@ -535,7 +552,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 light:bg-white light:text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
       {/* Top Navigation */}
       <Navbar
         session={session!}
@@ -543,6 +560,8 @@ export default function App() {
         setActiveTab={setActiveTab}
         readOnly={isReadOnlyPlayer}
         hideSessionControls={isRemoteMode}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Main App Container */}

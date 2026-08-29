@@ -146,20 +146,39 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   // Smart Balanced Matchmaking suggestion — picks 4 players and splits them
   // into fair teams (tier first, then carry/partner/opponent balance),
   // the same rule the auto-generated schedule uses. Doesn't exclude
-  // players currently on court, or already queued in some other scheduled
-  // match: Custom Match is commonly used to queue up a match for after the
-  // current rotation, so today's "busy" players will be free by the time
-  // this one starts. It DOES exclude away players — no amount of "will be
-  // free soon" reasoning applies to someone who isn't here.
+  // players busy elsewhere in the wider rotation — with a full multi-round
+  // schedule pre-generated, nearly everyone has SOME upcoming scheduled
+  // match at any given time (that's normal, not a conflict), so treating
+  // all of it as "busy" would leave almost nobody eligible.
+  //
+  // What it DOES exclude: away players, and players in whatever's already
+  // queued at the very tail of this court's schedule (the highest round
+  // number present) — that's where a custom match you just created lands
+  // (new custom matches always get roundNumber = current max + 1), so this
+  // stops Auto Fill from immediately re-suggesting the same 4 people for a
+  // second match on the same court right after you made the first one.
   //
   // Picks randomly among several comparably-fair options (not always the
   // literal single best) so clicking again after a suggestion you don't
   // want actually gives you something different, instead of the same
   // deterministic answer every time.
   const handleAutoBalanceCustom = () => {
-    const available = presentPlayers(session.players, Date.now(), session.createdAt);
+    const scheduledOnThisCourt = session.matches.filter(
+      (m) => m.status === 'scheduled' && m.courtId === customCourt
+    );
+    const tailRound = scheduledOnThisCourt.length > 0
+      ? Math.max(...scheduledOnThisCourt.map((m) => m.roundNumber))
+      : null;
+    const busyOnThisCourt = new Set(
+      scheduledOnThisCourt
+        .filter((m) => m.roundNumber === tailRound)
+        .flatMap((m) => [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id])
+    );
+    const available = presentPlayers(session.players, Date.now(), session.createdAt).filter(
+      (p) => !busyOnThisCourt.has(p.id)
+    );
     if (available.length < 4) {
-      alert('Not enough present players to auto-fill 4.');
+      alert('Not enough present players free for this court to auto-fill 4.');
       return;
     }
 
@@ -197,10 +216,28 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   };
 
   const handleReshuffleMatch = (m: Match) => {
-    // Not excluding players busy on another live court or in another
-    // scheduled match — same reasoning as Auto Fill above. Does exclude
-    // away players.
-    const available = presentPlayers(session.players, Date.now(), session.createdAt);
+    // Same reasoning as Auto Fill above: don't treat "has some other
+    // upcoming match in the schedule" as busy (that's nearly everyone,
+    // always — each court has one match per round for the whole rotation).
+    // Only exclude away players and players in whatever else is queued at
+    // the tail of this court's schedule (excluding m itself) — the same
+    // narrow definition Auto Fill uses, so reshuffling a just-created
+    // custom match doesn't immediately re-offer players already booked
+    // into another custom match added right after it on the same court.
+    const scheduledOnThisCourt = session.matches.filter(
+      (o) => o.id !== m.id && o.status === 'scheduled' && o.courtId === m.courtId
+    );
+    const tailRound = scheduledOnThisCourt.length > 0
+      ? Math.max(...scheduledOnThisCourt.map((o) => o.roundNumber))
+      : null;
+    const busyOnThisCourt = new Set(
+      scheduledOnThisCourt
+        .filter((o) => o.roundNumber === tailRound)
+        .flatMap((o) => [o.team1.player1.id, o.team1.player2.id, o.team2.player1.id, o.team2.player2.id])
+    );
+    const available = presentPlayers(session.players, Date.now(), session.createdAt).filter(
+      (p) => !busyOnThisCourt.has(p.id)
+    );
     if (available.length < 4) {
       alert('Not enough present players to reshuffle.');
       return;

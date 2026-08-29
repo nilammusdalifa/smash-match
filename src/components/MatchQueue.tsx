@@ -188,11 +188,15 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
   // want actually gives you something different, instead of the same
   // deterministic answer every time.
   // Shared by Auto Fill and Reshuffle: who's free to fill a match on this
-  // court right now. "Busy" only means queued in the tail (most recent)
-  // round of THIS court's schedule — not "has some other match somewhere
-  // in the rotation," which is nearly everyone, always (each court has one
-  // match per round for the whole rotation). Surfaced to the modal too, so
-  // the shortfall is visible before Auto Fill is clicked, not after.
+  // court right now. "Busy" means queued in the tail (most recent) round of
+  // THIS court's schedule — preferred out of the pick so Auto Fill doesn't
+  // just re-suggest the match you already have queued there. But a new
+  // match on the same court always runs sequentially, after whatever's
+  // already queued — never at the same time — so reusing those players for
+  // a later slot is perfectly fine, and is the only option once the group
+  // is too small to keep everyone distinct (e.g. 6 players sharing 1 busy
+  // court). Only fall back to reuse when going without would leave fewer
+  // than 4 to choose from.
   const getAvailableForCourt = (courtId: string, excludeMatchId?: string) => {
     const scheduledOnThisCourt = session.matches.filter(
       (m) => m.status === 'scheduled' && m.courtId === courtId && m.id !== excludeMatchId
@@ -206,8 +210,10 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
         .flatMap((m) => [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id])
     );
     const present = presentPlayers(session.players, Date.now(), session.createdAt);
-    const available = present.filter((p) => !busyOnThisCourt.has(p.id));
-    return { available, presentCount: present.length, busyCount: busyOnThisCourt.size };
+    const freshAvailable = present.filter((p) => !busyOnThisCourt.has(p.id));
+    const reused = freshAvailable.length < 4;
+    const available = reused ? present : freshAvailable;
+    return { available, presentCount: present.length, busyCount: busyOnThisCourt.size, reused };
   };
 
   const handleAutoBalanceCustom = () => {
@@ -758,18 +764,22 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
                 </div>
                 <button
                   onClick={handleAutoBalanceCustom}
-                  disabled={customCourtAvailability.available.length < 4}
+                  disabled={customCourtAvailability.presentCount < 4}
                   className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-600"
                 >
                   <Zap className="w-3 h-3" /> Auto Fill 4
                 </button>
               </div>
-              {customCourtAvailability.available.length < 4 && (
+              {customCourtAvailability.presentCount < 4 ? (
                 <p className="text-[11px] text-amber-300/90 leading-snug">
-                  {customCourtAvailability.presentCount < 4
-                    ? `Only ${customCourtAvailability.presentCount} player${customCourtAvailability.presentCount === 1 ? '' : 's'} present — need at least 4 to fill a match.`
-                    : `${customCourtName} already has ${customCourtAvailability.busyCount} of your ${customCourtAvailability.presentCount} present players queued for its next match — only ${customCourtAvailability.available.length} left free. Pick a different court, or edit that match instead.`}
+                  {`Only ${customCourtAvailability.presentCount} player${customCourtAvailability.presentCount === 1 ? '' : 's'} present — need at least 4 to fill a match.`}
                 </p>
+              ) : (
+                customCourtAvailability.reused && (
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    {`${customCourtName} already has ${customCourtAvailability.busyCount} of your ${customCourtAvailability.presentCount} present players queued next — this match will run after that one, reusing some of the same players.`}
+                  </p>
+                )
               )}
             </div>
 

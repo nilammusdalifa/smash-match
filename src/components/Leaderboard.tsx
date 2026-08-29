@@ -45,7 +45,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
     }
   };
 
-  const getRankBadge = (rank: number) => {
+  // No medal (or even a rank number) for anyone who hasn't played a match
+  // yet — a "ranking" with 0 games behind it is meaningless, and handing
+  // out gold/silver/bronze before anyone's played is actively misleading.
+  const getRankBadge = (rank: number, matchesPlayed: number) => {
+    if (matchesPlayed === 0) return <span className="font-mono text-slate-600 text-sm">—</span>;
     if (rank === 1) return <span className="text-xl">🥇</span>;
     if (rank === 2) return <span className="text-xl">🥈</span>;
     if (rank === 3) return <span className="text-xl">🥉</span>;
@@ -114,7 +118,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
               className="w-full text-left bg-slate-900 border border-slate-800 rounded-2xl p-4 active:bg-slate-800/60 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 shrink-0 text-center">{getRankBadge(st.rank)}</div>
+                <div className="w-8 shrink-0 text-center">{getRankBadge(st.rank, st.matchesPlayed)}</div>
                 <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
                   {st.player.name.substring(0, 2).toUpperCase()}
                 </div>
@@ -212,7 +216,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                   >
                     {/* Rank */}
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      {getRankBadge(st.rank)}
+                      {getRankBadge(st.rank, st.matchesPlayed)}
                     </td>
 
                     {/* Player Name & Skill */}

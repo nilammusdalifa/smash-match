@@ -249,8 +249,15 @@ export function computePlayerStats(players: Player[], matches: Match[]): PlayerS
     });
   });
 
-  // Sort by Wins desc -> Point Diff desc -> Points Scored desc -> Elo Rating desc
+  // Anyone with 0 matches played sorts after everyone who's played at
+  // least one, regardless of the other criteria below — a player who's
+  // played and lost still means something; a player who hasn't played at
+  // all doesn't yet. Within each group: Wins desc -> Point Diff desc ->
+  // Points Scored desc -> Elo Rating desc.
   result.sort((a, b) => {
+    const aPlayed = a.matchesPlayed > 0;
+    const bPlayed = b.matchesPlayed > 0;
+    if (aPlayed !== bPlayed) return aPlayed ? -1 : 1;
     if (b.matchesWon !== a.matchesWon) return b.matchesWon - a.matchesWon;
     if (b.pointDiff !== a.pointDiff) return b.pointDiff - a.pointDiff;
     if (b.pointsScored !== a.pointsScored) return b.pointsScored - a.pointsScored;

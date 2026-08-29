@@ -10,7 +10,6 @@ import {
   UserCheck,
   HeartHandshake,
   LayoutGrid,
-  Share2,
   Plus,
   RotateCcw,
   ChevronRight,
@@ -72,14 +71,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [showRequests, setShowRequests] = useState(false);
   const [showChangeCourts, setShowChangeCourts] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
-
-  const handleShareLiveLink = () => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}?view=${session.id}`;
-    navigator.clipboard.writeText(shareUrl);
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2500);
-  };
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -112,16 +103,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           title="Change Courts"
           description={`Currently ${session.courtCount} ${session.courtCount === 1 ? 'court' : 'courts'}`}
           onClick={() => setShowChangeCourts(true)}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <h2 className="text-sm font-bold text-white uppercase tracking-wider">Share</h2>
-        <ActionRow
-          icon={<Share2 className="w-4 h-4" />}
-          title={linkCopied ? 'Link Copied!' : 'Share Live Link'}
-          description={session.pin ? `View-only link for spectators • PIN ${session.pin}` : 'View-only link for spectators'}
-          onClick={handleShareLiveLink}
         />
       </div>
 

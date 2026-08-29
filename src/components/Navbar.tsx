@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TournamentSession } from '../types/badminton';
 import {
   Trophy,
   Calendar,
   Grid,
   Settings2,
+  Share2,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -28,6 +29,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   readOnly = false,
 }) => {
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const handleShareLiveLink = () => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?view=${session.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2500);
+  };
+
   const completedMatches = session.matches.filter((m) => m.status === 'completed').length;
   const totalMatches = session.matches.length;
   const progressPercent = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0;
@@ -71,6 +81,30 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <span className="text-emerald-400 font-semibold">{completedMatches}/{totalMatches} Matches ({progressPercent}%)</span>
           </div>
+
+          {/* Share Live Link + PIN (organizer + umpire only) — always visible,
+              there's no fallback mobile menu now that admin actions live in
+              the Settings tab instead of a header dropdown. */}
+          {!readOnly && (
+            <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+              <button
+                id="btn-share-live-link"
+                onClick={handleShareLiveLink}
+                title="Copy a view-only link to share"
+                className="p-2.5 sm:p-2 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-all cursor-pointer"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+              {session.pin && (
+                <span className="hidden sm:inline text-xs text-slate-400 font-mono px-2 py-1 rounded-md bg-slate-800 border border-slate-700">
+                  PIN: {session.pin}
+                </span>
+              )}
+              {linkCopied && (
+                <span className="text-xs text-emerald-400 font-medium whitespace-nowrap">Copied!</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tab Navigation */}

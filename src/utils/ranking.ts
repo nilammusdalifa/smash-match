@@ -35,6 +35,40 @@ export function calculateDoublesEloChange(
 }
 
 /**
+ * Rebuilds every player's currentRating from scratch by replaying all
+ * completed matches in chronological order. Elo is order-dependent — a
+ * single match's delta can't be reversed in isolation once later matches
+ * have compounded on top of it — so this is the only correct way to handle
+ * deleting a completed match or editing its score after the fact.
+ */
+export function recomputeAllRatings(players: Player[], matches: Match[]): Player[] {
+  const ratings = new Map<string, number>(players.map((p) => [p.id, p.initialRating]));
+
+  const completed = matches
+    .filter((m) => m.status === 'completed' && m.score.isCompleted)
+    .slice()
+    .sort((a, b) => (a.endTime ?? a.startTime ?? 0) - (b.endTime ?? b.startTime ?? 0) || a.matchNumber - b.matchNumber);
+
+  completed.forEach((m) => {
+    const t1Ids = [m.team1.player1.id, m.team1.player2.id];
+    const t2Ids = [m.team2.player1.id, m.team2.player2.id];
+    const asRated = (id: string, fallback: number): Player => ({ currentRating: ratings.get(id) ?? fallback } as Player);
+
+    const { team1Delta, team2Delta } = calculateDoublesEloChange(
+      [asRated(t1Ids[0], m.team1.player1.currentRating), asRated(t1Ids[1], m.team1.player2.currentRating)],
+      [asRated(t2Ids[0], m.team2.player1.currentRating), asRated(t2Ids[1], m.team2.player2.currentRating)],
+      m.score.team1Score,
+      m.score.team2Score
+    );
+
+    t1Ids.forEach((id) => ratings.set(id, Math.max(100, (ratings.get(id) ?? 1200) + team1Delta)));
+    t2Ids.forEach((id) => ratings.set(id, Math.max(100, (ratings.get(id) ?? 1200) + team2Delta)));
+  });
+
+  return players.map((p) => ({ ...p, currentRating: ratings.get(p.id) ?? p.currentRating }));
+}
+
+/**
  * Computes individual player stats, rankings, partner synergies, and head-to-head records
  */
 export function computePlayerStats(players: Player[], matches: Match[]): PlayerStats[] {

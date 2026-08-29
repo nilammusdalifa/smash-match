@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { TournamentSession, Match, Court } from '../types/badminton';
-import { soundManager } from '../utils/audio';
 import {
   pickBestAvailableFoursome,
   computePartnerCounts,
@@ -11,7 +10,6 @@ import { computeFairShare, presentPlayers } from '../utils/fairness';
 import {
   Play,
   CheckCircle2,
-  Bell,
   Clock,
   Maximize2,
   Users,
@@ -55,7 +53,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
   };
 
   const handleSaveFinalScore = (matchId: string) => {
-    soundManager.playFanfare();
     onUpdateMatchScore(matchId, editScoreT1, editScoreT2, true);
     setEditingScoreMatchId(null);
   };
@@ -73,13 +70,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
     const mins = Math.floor(elapsed / 60);
     const secs = elapsed % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleCallToCourt = (court: Court, match: Match) => {
-    soundManager.playCourtChime();
-    const t1 = `${match.team1.player1.name} and ${match.team1.player2.name}`;
-    const t2 = `${match.team2.player1.name} and ${match.team2.player2.name}`;
-    soundManager.announce(`Attention please. ${court.name}. Match round ${match.roundNumber}. ${t1} versus ${t2}. Please proceed to the court!`);
   };
 
   // Most recently finished matches, newest first — quick access without digging into Schedule
@@ -218,7 +208,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                           Round {activeMatch.roundNumber} • Match #{activeMatch.matchNumber}
                         </span>
                       ) : (
-                        <span className="text-[11px] text-slate-500 font-medium">Court Available / Idle</span>
+                        <span className="text-[11px] text-slate-500 font-medium">Available</span>
                       )}
                     </div>
                   </div>
@@ -230,15 +220,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                       <Clock className="w-3.5 h-3.5 text-emerald-400" />
                       <span>{formatDuration(activeMatch.startTime)}</span>
                     </div>
-
-                    <button
-                      id={`btn-call-court-${court.id}`}
-                      onClick={() => handleCallToCourt(court, activeMatch)}
-                      title="Announce Court Assignment"
-                      className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 transition-all cursor-pointer"
-                    >
-                      <Bell className="w-4 h-4" />
-                    </button>
                   </div>
                 )}
               </div>
@@ -247,7 +228,10 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
               <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                 {activeMatch ? (
                   <div className="space-y-4">
-                    {/* Live Match Scoreboard */}
+                    {/* Live Match Scoreboard — hidden while entering a final
+                        score directly, so that panel doesn't end up pushed
+                        below the fold on a small screen. */}
+                    {editingScoreMatchId !== activeMatch.id && (
                     <div className="bg-slate-950/60 rounded-xl p-3 sm:p-4 border border-slate-800/80">
                       <div className="flex flex-col sm:grid sm:grid-cols-11 gap-3 sm:gap-2 sm:items-center">
                         {/* Team 1 Box */}
@@ -279,7 +263,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               id={`btn-add-t1-${activeMatch.id}`}
                               onClick={() => {
                                 const newScore = activeMatch.score.team1Score + 1;
-                                soundManager.playPointChime(1);
                                 const isWin = newScore >= session.rules.pointsToWin && (newScore - activeMatch.score.team2Score >= 2 || newScore >= session.rules.maxPointsCap);
                                 onUpdateMatchScore(activeMatch.id, newScore, activeMatch.score.team2Score, isWin);
                               }}
@@ -360,7 +343,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                               id={`btn-add-t2-${activeMatch.id}`}
                               onClick={() => {
                                 const newScore = activeMatch.score.team2Score + 1;
-                                soundManager.playPointChime(2);
                                 const isWin = newScore >= session.rules.pointsToWin && (newScore - activeMatch.score.team1Score >= 2 || newScore >= session.rules.maxPointsCap);
                                 onUpdateMatchScore(activeMatch.id, activeMatch.score.team1Score, newScore, isWin);
                               }}
@@ -373,6 +355,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                         </div>
                       </div>
                     </div>
+                    )}
 
                     {/* Quick Finish Match Button, or Direct Final-Score Entry */}
                     {!readOnly && (editingScoreMatchId === activeMatch.id ? (
@@ -380,24 +363,34 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                         <div className="flex items-center justify-center gap-3">
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] text-emerald-400 font-semibold uppercase">Team A</span>
+                            <span className="text-xs text-slate-300 text-center leading-tight">
+                              {activeMatch.team1.player1.name}<br />{activeMatch.team1.player2.name}
+                            </span>
                             <input
                               type="number"
                               min="0"
                               max="99"
-                              value={editScoreT1}
-                              onChange={(e) => setEditScoreT1(Number(e.target.value))}
+                              value={editScoreT1 === 0 ? '' : editScoreT1}
+                              onChange={(e) => setEditScoreT1(e.target.value === '' ? 0 : Number(e.target.value))}
+                              onFocus={(e) => e.target.select()}
+                              placeholder="0"
                               className="w-16 h-11 text-center bg-slate-900 border border-emerald-500/50 rounded-lg text-lg font-mono font-bold text-white focus:outline-none focus:border-emerald-500"
                             />
                           </div>
                           <span className="text-slate-600 font-bold mt-4">-</span>
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] text-teal-400 font-semibold uppercase">Team B</span>
+                            <span className="text-xs text-slate-300 text-center leading-tight">
+                              {activeMatch.team2.player1.name}<br />{activeMatch.team2.player2.name}
+                            </span>
                             <input
                               type="number"
                               min="0"
                               max="99"
-                              value={editScoreT2}
-                              onChange={(e) => setEditScoreT2(Number(e.target.value))}
+                              value={editScoreT2 === 0 ? '' : editScoreT2}
+                              onChange={(e) => setEditScoreT2(e.target.value === '' ? 0 : Number(e.target.value))}
+                              onFocus={(e) => e.target.select()}
+                              placeholder="0"
                               className="w-16 h-11 text-center bg-slate-900 border border-teal-500/50 rounded-lg text-lg font-mono font-bold text-white focus:outline-none focus:border-teal-500"
                             />
                           </div>
@@ -425,7 +418,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                           id={`btn-finish-match-${activeMatch.id}`}
                           onClick={() => {
                             if (confirm(`Finish match with score ${activeMatch.score.team1Score} - ${activeMatch.score.team2Score}?`)) {
-                              soundManager.playFanfare();
                               onUpdateMatchScore(
                                 activeMatch.id,
                                 activeMatch.score.team1Score,
@@ -503,16 +495,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => {
-                            soundManager.playCourtChime();
-                            soundManager.announce(`${court.name} on deck: ${nextMatch.team1.player1.name}, ${nextMatch.team1.player2.name} versus ${nextMatch.team2.player1.name}, ${nextMatch.team2.player2.name}. Please warm up!`);
-                          }}
-                          title="Alert On-Deck Players"
-                          className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition-all cursor-pointer"
-                        >
-                          <Bell className="w-4 h-4" />
-                        </button>
                         {!activeMatch && !readOnly && (
                           <button
                             onClick={() => onStartMatch(nextMatch.id, court.id)}

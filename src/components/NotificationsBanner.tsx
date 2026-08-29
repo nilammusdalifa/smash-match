@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { CourtNotification } from '../types/badminton';
 import { Bell, X, Sparkles, Coffee, Play, Trophy } from 'lucide-react';
+
+const AUTO_DISMISS_MS = 3000;
 
 interface NotificationsBannerProps {
   notifications: CourtNotification[];
@@ -12,6 +14,37 @@ export const NotificationsBanner: React.FC<NotificationsBannerProps> = ({
   onDismiss,
 }) => {
   const unread = notifications.filter((n) => !n.read).slice(0, 3);
+
+  // Auto-dismiss each toast a fixed time after it first appears. Timers are
+  // tracked per notification id so a re-render doesn't restart the countdown,
+  // and cleared if the notification is dismissed (or removed) before it fires.
+  const timersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    const timers = timersRef.current;
+    unread.forEach((n) => {
+      if (!timers.has(n.id)) {
+        timers.set(
+          n.id,
+          setTimeout(() => {
+            timers.delete(n.id);
+            onDismiss(n.id);
+          }, AUTO_DISMISS_MS)
+        );
+      }
+    });
+    timers.forEach((timer, id) => {
+      if (!unread.some((n) => n.id === id)) {
+        clearTimeout(timer);
+        timers.delete(id);
+      }
+    });
+  }, [unread, onDismiss]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => timers.forEach((timer) => clearTimeout(timer));
+  }, []);
+
   if (unread.length === 0) return null;
 
   const getIcon = (type: CourtNotification['type']) => {

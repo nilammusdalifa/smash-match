@@ -14,15 +14,13 @@ import {
   pushSessionOwnershipToFirebase
 } from './utils/storage';
 import { auth, ensureAnonymousAuth } from './utils/firebase';
-import { calculateDoublesEloChange } from './utils/ranking';
+import { recomputeAllRatings } from './utils/ranking';
 import { generateId, regenerateRemainingSchedule } from './utils/scheduler';
-import { soundManager } from './utils/audio';
 import { Navbar } from './components/Navbar';
 import { CourtBoard } from './components/CourtBoard';
 import { MatchQueue } from './components/MatchQueue';
 import { Leaderboard } from './components/Leaderboard';
-import { PlayerMatrix } from './components/PlayerMatrix';
-import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { SettingsPanel } from './components/SettingsPanel';
 import { ScorekeeperModal } from './components/ScorekeeperModal';
 import { SessionSetupModal } from './components/SessionSetupModal';
 import { PlayerProfileModal } from './components/PlayerProfileModal';
@@ -92,7 +90,7 @@ export default function App() {
   const isReadOnlyPlayer = isRemoteMode && remoteRole === 'player';
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<'courts' | 'schedule' | 'leaderboard' | 'synergy' | 'analytics'>('courts');
+  const [activeTab, setActiveTab] = useState<'courts' | 'schedule' | 'leaderboard' | 'settings'>('courts');
 
   // Modals state
   const [scorekeeperMatch, setScorekeeperMatch] = useState<Match | null>(null);
@@ -104,11 +102,10 @@ export default function App() {
 
   // Helper to add toast notification
   const addNotification = useCallback((
-    title: string, 
-    message: string, 
-    courtName: string, 
-    type: CourtNotification['type'],
-    speechText?: string
+    title: string,
+    message: string,
+    courtName: string,
+    type: CourtNotification['type']
   ) => {
     const newNotif: CourtNotification = {
       id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
@@ -118,13 +115,8 @@ export default function App() {
       type,
       timestamp: Date.now(),
       read: false,
-      speechText,
     };
     setNotifications((prev) => [newNotif, ...prev.slice(0, 9)]);
-
-    if (speechText) {
-      soundManager.announce(speechText);
-    }
   }, []);
 
   // Update match score
@@ -154,60 +146,46 @@ export default function App() {
       winnerTeamId: isCompleted ? (team1Score > team2Score ? 1 : 2) : undefined,
     };
 
-    if (isCompleted && !wasCompleted) {
+    const becameCompleted = !!isCompleted && !wasCompleted;
+    if (becameCompleted) {
       targetMatch.status = 'completed';
       targetMatch.endTime = Date.now();
       if (targetMatch.startTime) {
         targetMatch.durationSeconds = Math.max(1, Math.floor((Date.now() - targetMatch.startTime) / 1000));
       }
+    }
 
-      // Elo Rating Updates
-      const { team1Delta, team2Delta } = calculateDoublesEloChange(
-        [targetMatch.team1.player1, targetMatch.team1.player2],
-        [targetMatch.team2.player1, targetMatch.team2.player2],
-        team1Score,
-        team2Score
-      );
-
-      // Update player rating copy in session
-      const updatedPlayers = session.players.map((p) => {
-        if (p.id === targetMatch.team1.player1.id || p.id === targetMatch.team1.player2.id) {
-          return { ...p, currentRating: Math.max(100, p.currentRating + team1Delta) };
-        }
-        if (p.id === targetMatch.team2.player1.id || p.id === targetMatch.team2.player2.id) {
-          return { ...p, currentRating: Math.max(100, p.currentRating + team2Delta) };
-        }
-        return p;
-      });
-
-      // Update court status (clear active match from court)
-      const updatedCourts = session.courts.map((c) => {
-        if (c.currentMatchId === matchId) {
-          return { ...c, currentMatchId: undefined };
-        }
-        return c;
-      });
+    // Either a fresh completion or a correction to an already-completed
+    // match's score — either way, ratings must reflect the final recorded
+    // score. Rebuilt from scratch (see recomputeAllRatings) rather than
+    // patched with a single delta, since Elo is order-dependent.
+    if (becameCompleted || (isCompleted && wasCompleted)) {
+      const nextMatches = session.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m));
+      const updatedPlayers = recomputeAllRatings(session.players, nextMatches);
+      const updatedCourts = becameCompleted
+        ? session.courts.map((c) => (c.currentMatchId === matchId ? { ...c, currentMatchId: undefined } : c))
+        : session.courts;
 
       const nextSession: TournamentSession = {
         ...session,
         players: updatedPlayers,
         courts: updatedCourts,
-        matches: session.matches.map((m, idx) => (idx === matchIdx ? targetMatch : m)),
+        matches: nextMatches,
       };
 
       setSession(nextSession);
       persistSession(nextSession);
 
-      // Trigger notification
-      const winTeam = team1Score > team2Score ? targetMatch.team1 : targetMatch.team2;
-      const winNames = `${winTeam.player1.name} & ${winTeam.player2.name}`;
-      addNotification(
-        'Match Concluded',
-        `${winNames} won ${Math.max(team1Score, team2Score)}-${Math.min(team1Score, team2Score)}`,
-        targetMatch.courtName || 'Court 1',
-        'match_completed',
-        `Match finished on ${targetMatch.courtName || 'Court 1'}. Winners: ${winNames}.`
-      );
+      if (becameCompleted) {
+        const winTeam = team1Score > team2Score ? targetMatch.team1 : targetMatch.team2;
+        const winNames = `${winTeam.player1.name} & ${winTeam.player2.name}`;
+        addNotification(
+          'Match Concluded',
+          `${winNames} won ${Math.max(team1Score, team2Score)}-${Math.min(team1Score, team2Score)}`,
+          targetMatch.courtName || 'Court 1',
+          'match_completed'
+        );
+      }
       return;
     }
 
@@ -252,7 +230,6 @@ export default function App() {
     setSession(nextSession);
     persistSession(nextSession);
 
-    soundManager.playCourtChime();
     const p1 = targetMatch.team1.player1.name;
     const p2 = targetMatch.team1.player2.name;
     const p3 = targetMatch.team2.player1.name;
@@ -263,8 +240,7 @@ export default function App() {
       'Match Starting',
       `${courtLabel}: ${p1} & ${p2} vs ${p3} & ${p4}`,
       courtLabel,
-      'match_start',
-      `Match starting on ${courtLabel}. ${p1} and ${p2} versus ${p3} and ${p4}. Ready, play!`
+      'match_start'
     );
   };
 
@@ -329,13 +305,11 @@ export default function App() {
     setSession(nextSession);
     persistSession(nextSession);
 
-    soundManager.playCourtChime();
     addNotification(
       'Match Starting',
       `${newMatch.courtName}: ${p1.name} & ${p2.name} vs ${p3.name} & ${p4.name}`,
       newMatch.courtName!,
-      'match_start',
-      `Match starting on ${newMatch.courtName}. ${p1.name} and ${p2.name} versus ${p3.name} and ${p4.name}. Ready, play!`
+      'match_start'
     );
   };
 
@@ -369,6 +343,11 @@ export default function App() {
       currentRating: startingRating,
       skillLevel: tier,
       active: true,
+      // An unset arrivedAt means "present since session start" — correct
+      // for the initial roster, wrong for someone added mid-session, who
+      // would otherwise retroactively count as owed entitlement for every
+      // match that already happened before they existed.
+      arrivedAt: Date.now(),
     };
     const sessionWithPlayer = { ...session, players: [...session.players, newPlayer] };
     const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPlayer);
@@ -445,15 +424,26 @@ export default function App() {
     persistSession(nextSession);
   };
 
-  // Remove a not-yet-played match. The 4 freed-up players simply sit out
-  // that round — nothing else in the schedule shifts.
+  // Remove any match — scheduled (freed-up players just sit out that round),
+  // in-progress (e.g. a mis-entered Custom Match), or completed (e.g. a
+  // wrong score that was already saved). Ratings are rebuilt from scratch
+  // afterward since Elo is order-dependent — see recomputeAllRatings.
   const handleDeleteMatch = (matchId: string) => {
     if (!session) return;
     const match = session.matches.find((m) => m.id === matchId);
-    if (!match || match.status !== 'scheduled') return;
+    if (!match) return;
+
+    const remainingMatches = session.matches.filter((m) => m.id !== matchId);
+    const updatedPlayers = recomputeAllRatings(session.players, remainingMatches);
+    const updatedCourts = session.courts.map((c) =>
+      c.currentMatchId === matchId ? { ...c, currentMatchId: undefined } : c
+    );
+
     const nextSession: TournamentSession = {
       ...session,
-      matches: session.matches.filter((m) => m.id !== matchId),
+      matches: remainingMatches,
+      players: updatedPlayers,
+      courts: updatedCourts,
     };
     setSession(nextSession);
     persistSession(nextSession);
@@ -496,7 +486,8 @@ export default function App() {
       session!.name,
       session!.players.map((p) => ({ ...p, currentRating: p.initialRating })),
       session!.courtCount,
-      session!.rules
+      session!.rules,
+      session!.courts.map((c) => ({ name: c.name }))
     );
     setSession(reset);
   };
@@ -505,7 +496,6 @@ export default function App() {
   const handleSessionCreated = (newSession: TournamentSession) => {
     setSession(newSession);
     setActiveTab('courts');
-    soundManager.playFanfare();
     confetti({
       particleCount: 70,
       spread: 60,
@@ -551,12 +541,6 @@ export default function App() {
         session={session!}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onOpenNewSessionModal={() => setShowSetupModal(true)}
-        onResetSession={handleResetSession}
-        onAddPlayer={handleAddPlayer}
-        onUpdateCourtCount={handleUpdateCourtCount}
-        onSetPlayerPresence={handleSetPlayerPresence}
-        onSetRequestedPairs={handleSetRequestedPairs}
         readOnly={isReadOnlyPlayer}
         hideSessionControls={isRemoteMode}
       />
@@ -595,15 +579,16 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'synergy' && (
-          <PlayerMatrix
+        {activeTab === 'settings' && !isReadOnlyPlayer && (
+          <SettingsPanel
             session={session!}
-          />
-        )}
-
-        {activeTab === 'analytics' && (
-          <AnalyticsDashboard
-            session={session!}
+            onAddPlayer={handleAddPlayer}
+            onSetPlayerPresence={handleSetPlayerPresence}
+            onSetRequestedPairs={handleSetRequestedPairs}
+            onUpdateCourtCount={handleUpdateCourtCount}
+            onOpenNewSessionModal={() => setShowSetupModal(true)}
+            onResetSession={handleResetSession}
+            hideSessionControls={isRemoteMode}
           />
         )}
       </main>

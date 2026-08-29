@@ -123,5 +123,4 @@ export interface CourtNotification {
   type: 'court_ready' | 'match_start' | 'match_completed' | 'on_deck' | 'resting_alert';
   timestamp: number;
   read: boolean;
-  speechText?: string;
 }

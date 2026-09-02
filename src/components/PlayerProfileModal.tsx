@@ -89,20 +89,18 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
                     Cancel
                   </button>
                 </div>
-              ) : (
+              ) : !readOnly ? (
                 <p className="text-xs text-slate-400 light:text-slate-500 flex items-center gap-1.5">
                   <span>Tier {player.skillLevel || 'A'}</span>
-                  {!readOnly && (
-                    <button
-                      onClick={() => setEditingTier(true)}
-                      title="Edit tier"
-                      className="text-slate-500 light:text-slate-400 hover:text-emerald-400 light:hover:text-emerald-600 cursor-pointer"
-                    >
-                      <Edit3 className="w-3 h-3" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setEditingTier(true)}
+                    title="Edit tier"
+                    className="text-slate-500 light:text-slate-400 hover:text-emerald-400 light:hover:text-emerald-600 cursor-pointer"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                  </button>
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
 

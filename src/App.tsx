@@ -595,6 +595,7 @@ export default function App() {
           <Leaderboard
             session={session!}
             onSelectPlayer={(p) => setSelectedProfilePlayer(p)}
+            readOnly={isReadOnlyPlayer}
           />
         )}
 

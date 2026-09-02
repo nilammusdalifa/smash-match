@@ -15,6 +15,8 @@ import {
 interface LeaderboardProps {
   session: TournamentSession;
   onSelectPlayer: (player: Player) => void;
+  /** Player (view-only) mode: hides tier, which is organizer-facing info. */
+  readOnly?: boolean;
 }
 
 // A short horizontal rule with corner ticks, echoing a badminton court's
@@ -31,7 +33,7 @@ const ServiceLineDivider: React.FC<{ label: string; patchBg: string }> = ({ labe
   </div>
 );
 
-export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlayer }) => {
+export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlayer, readOnly = false }) => {
   const [sortBy, setSortBy] = useState<'rank' | 'winRate' | 'pointDiff' | 'wins'>('rank');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   const [showShare, setShowShare] = useState<boolean>(false);
@@ -269,7 +271,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ session, onSelectPlaye
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            {st.player.skillLevel && (
+                            {!readOnly && st.player.skillLevel && (
                               <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 light:bg-slate-100 text-slate-400 light:text-slate-500 border border-slate-700/60 light:border-slate-300/60">
                                 {st.player.skillLevel}
                               </span>

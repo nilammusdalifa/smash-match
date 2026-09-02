@@ -121,8 +121,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <Share2 className="w-4 h-4" />
                 </button>
                 {session.pin && (
-                  <span className="hidden sm:inline text-xs text-slate-400 light:text-slate-500 font-mono px-2 py-1 rounded-md bg-slate-800 light:bg-slate-100 border border-slate-700 light:border-slate-200">
-                    PIN: {session.pin}
+                  <span
+                    title="PIN for Umpires/Players to join this live session"
+                    className="text-xs text-slate-400 light:text-slate-500 font-mono px-2 py-1 rounded-md bg-slate-800 light:bg-slate-100 border border-slate-700 light:border-slate-200 whitespace-nowrap"
+                  >
+                    <span className="hidden sm:inline">PIN: </span>{session.pin}
                   </span>
                 )}
                 {linkCopied && (

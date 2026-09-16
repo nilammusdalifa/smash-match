@@ -16,6 +16,7 @@ import {
 import { auth, ensureAnonymousAuth } from './utils/firebase';
 import { recomputeAllRatings } from './utils/ranking';
 import { generateId, regenerateRemainingSchedule } from './utils/scheduler';
+import { refreshSuggestions } from './utils/rolling';
 import { Navbar } from './components/Navbar';
 import { CourtBoard } from './components/CourtBoard';
 import { MatchQueue } from './components/MatchQueue';
@@ -373,6 +374,25 @@ export default function App() {
     persistSession(nextSession);
   };
 
+  // Fixes the case where a late arrival was never marked Away first, so
+  // their `arrivedAt` is still undefined (= "present since session start")
+  // even though they just walked in. Unlike the Away -> Here toggle, this
+  // works on someone the app currently considers present the whole time —
+  // it just stamps the real arrival moment so fair-share (and the Task 3
+  // catch-up cap) stop crediting them for time they weren't here.
+  const handleMarkJustArrived = (playerId: string) => {
+    if (!session) return;
+    const now = Date.now();
+    const updatedPlayers = session.players.map((p) =>
+      p.id === playerId ? { ...p, arrivedAt: now } : p
+    );
+    const sessionWithArrival = { ...session, players: updatedPlayers };
+    const { matches, totalRounds } = refreshSuggestions(sessionWithArrival);
+    const nextSession: TournamentSession = { ...sessionWithArrival, matches, totalRounds };
+    setSession(nextSession);
+    persistSession(nextSession);
+  };
+
   // Mark someone as here / not here yet. Everyone is present by default, so
   // this is only used for the exceptions (late arrivals, early leavers), and
   // it re-balances every match that hasn't been played yet.
@@ -604,6 +624,7 @@ export default function App() {
             session={session!}
             onAddPlayer={handleAddPlayer}
             onSetPlayerPresence={handleSetPlayerPresence}
+            onMarkJustArrived={handleMarkJustArrived}
             onSetRequestedPairs={handleSetRequestedPairs}
             onUpdateCourtCount={handleUpdateCourtCount}
             onOpenNewSessionModal={() => setShowSetupModal(true)}

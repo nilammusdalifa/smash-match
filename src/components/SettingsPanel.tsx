@@ -19,6 +19,7 @@ interface SettingsPanelProps {
   session: TournamentSession;
   onAddPlayer: (name: string, tier: 'A' | 'B' | 'C') => void;
   onSetPlayerPresence: (playerId: string, present: boolean) => void;
+  onMarkJustArrived: (playerId: string) => void;
   onSetRequestedPairs: (pairs: Array<[string, string]>) => void;
   onUpdateCourtCount: (count: number, courtNames?: string[]) => void;
   onOpenNewSessionModal: () => void;
@@ -60,6 +61,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   session,
   onAddPlayer,
   onSetPlayerPresence,
+  onMarkJustArrived,
   onSetRequestedPairs,
   onUpdateCourtCount,
   onOpenNewSessionModal,
@@ -131,7 +133,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       )}
 
       {showAttendance && createPortal(
-        <AttendanceModal session={session} onSetPlayerPresence={onSetPlayerPresence} onClose={() => setShowAttendance(false)} />,
+        <AttendanceModal session={session} onSetPlayerPresence={onSetPlayerPresence} onMarkJustArrived={onMarkJustArrived} onClose={() => setShowAttendance(false)} />,
         document.body
       )}
 

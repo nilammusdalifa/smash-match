@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TournamentSession, Match, Court } from '../types/badminton';
 import {
-  pickBestAvailableFoursome,
-  computePartnerCounts,
-  computeOpponentCounts,
-  computeCarryHistory,
-} from '../utils/scheduler';
-import { computeFairShare, presentPlayers } from '../utils/fairness';
-import {
   Play,
   CheckCircle2,
   Clock,
@@ -16,7 +9,8 @@ import {
   Coffee,
   Minus,
   Sparkles,
-  Edit3
+  Edit3,
+  Shuffle
 } from 'lucide-react';
 
 // A slim bar with a bright leading edge fading to a muted body — evoking a
@@ -37,6 +31,7 @@ interface CourtBoardProps {
   onOpenScorekeeper: (match: Match) => void;
   onQuickAssignNextMatch: (courtId: string) => void;
   onStartSuggestedMatch: (courtId: string, playerIds: [string, string, string, string]) => void;
+  onRerollMatch: (matchId: string) => void;
   readOnly?: boolean;
 }
 
@@ -47,6 +42,7 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
   onOpenScorekeeper,
   onQuickAssignNextMatch,
   onStartSuggestedMatch,
+  onRerollMatch,
   readOnly = false,
 }) => {
   // Local timer ticker for active match duration
@@ -88,31 +84,6 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
     .filter((m) => m.status === 'completed')
     .sort((a, b) => (b.endTime || 0) - (a.endTime || 0))
     .slice(0, 3);
-
-  // Live "who should play next" suggestion — only meaningful once a court
-  // has no pre-generated match queued for it at all (the schedule ran dry).
-  // Unlike Custom Match's plan-ahead tools, this starts a match immediately,
-  // so anyone already mid-match elsewhere is a real conflict and stays
-  // excluded rather than just deprioritized.
-  const now = Date.now();
-  const busyElsewhere = new Set(
-    session.matches
-      .filter((m) => m.status === 'in_progress' || m.status === 'scheduled')
-      .flatMap((m) => [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id])
-  );
-  const eligibleForSuggestion = presentPlayers(session.players, now, session.createdAt).filter(
-    (p) => !busyElsewhere.has(p.id)
-  );
-  const suggestionHistory = session.matches.filter((m) => m.status !== 'scheduled');
-  const suggestion =
-    !readOnly && eligibleForSuggestion.length >= 4
-      ? pickBestAvailableFoursome(eligibleForSuggestion, {
-          fairShare: computeFairShare(suggestionHistory, session.players, session.createdAt),
-          partnerCounts: computePartnerCounts(suggestionHistory),
-          opponentCounts: computeOpponentCounts(suggestionHistory),
-          carryHistory: computeCarryHistory(suggestionHistory),
-        })
-      : null;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -500,45 +471,25 @@ export const CourtBoard: React.FC<CourtBoardProps> = ({
                   </div>
 
                   {nextMatch ? (
-                    // Purely informational here — when the court is idle, the
-                    // "Court is Ready" block above already has the one Start
-                    // button for this same match; a second one here would
-                    // just be the same action twice.
-                    <div className="bg-slate-950/80 light:bg-slate-50/80 p-3 rounded-xl border border-slate-800 light:border-slate-200 text-xs">
+                    <div className="bg-slate-950/80 light:bg-slate-50/80 p-3 rounded-xl border border-slate-800 light:border-slate-200 text-xs space-y-2">
                       <div className="font-medium text-slate-200 light:text-slate-700">
                         <span className="text-emerald-400 light:text-emerald-600 font-semibold">{nextMatch.team1.player1.name} & {nextMatch.team1.player2.name}</span>
                         <span className="text-slate-500 light:text-slate-400 mx-1.5">vs</span>
                         <span className="text-teal-400 light:text-teal-600 font-semibold">{nextMatch.team2.player1.name} & {nextMatch.team2.player2.name}</span>
                       </div>
-                    </div>
-                  ) : suggestion && !activeMatch ? (
-                    <div className="bg-slate-950/60 light:bg-slate-50/60 border border-emerald-500/30 light:border-emerald-300 rounded-xl p-3 space-y-2">
-                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 light:text-slate-500">
-                        <Sparkles className="w-3 h-3 text-emerald-400 light:text-emerald-600" />
-                        <span>Suggested — nothing queued for this court yet</span>
-                      </div>
-                      <div className="text-xs text-slate-200 light:text-slate-700">
-                        {suggestion.split.t1[0].name} &amp; {suggestion.split.t1[1].name}
-                        <span className="text-slate-500 light:text-slate-400 mx-1.5">vs</span>
-                        {suggestion.split.t2[0].name} &amp; {suggestion.split.t2[1].name}
-                      </div>
-                      <button
-                        onClick={() =>
-                          onStartSuggestedMatch(court.id, [
-                            suggestion.split.t1[0].id,
-                            suggestion.split.t1[1].id,
-                            suggestion.split.t2[0].id,
-                            suggestion.split.t2[1].id,
-                          ])
-                        }
-                        className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer"
-                      >
-                        Start on {court.name}
-                      </button>
+                      {!readOnly && (
+                        <button
+                          onClick={() => onRerollMatch(nextMatch.id)}
+                          className="w-full py-1.5 rounded-lg bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-slate-300 light:text-slate-600 text-[11px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Shuffle className="w-3 h-3" />
+                          <span>Reroll</span>
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="text-xs text-slate-500 light:text-slate-400 italic py-1 text-center bg-slate-950/40 light:bg-slate-50/40 rounded-lg">
-                      All scheduled matches completed!
+                      Not enough players present for another match yet.
                     </div>
                   )}
                 </div>

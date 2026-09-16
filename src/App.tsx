@@ -539,6 +539,18 @@ export default function App() {
     persistSession(nextSession);
   };
 
+  // Offers a different comparably-fair foursome for a not-yet-started
+  // match — full tier/carry/rating/variety logic, never a blind shuffle.
+  const handleRerollMatch = (matchId: string) => {
+    if (!session) return;
+    const result = rerollMatch(session, matchId);
+    if (!result) {
+      alert('Not enough players present to reroll this match.');
+      return;
+    }
+    handleUpdateMatchPlayers(matchId, result.team1, result.team2);
+  };
+
   // Reset Session
   const handleResetSession = () => {
     const reset = createNewSession(
@@ -616,6 +628,7 @@ export default function App() {
             onOpenScorekeeper={handleOpenScorekeeper}
             onQuickAssignNextMatch={handleQuickAssignNextMatch}
             onStartSuggestedMatch={handleStartSuggestedMatch}
+            onRerollMatch={handleRerollMatch}
             readOnly={isReadOnlyPlayer}
           />
         )}

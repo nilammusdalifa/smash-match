@@ -21,6 +21,7 @@ import {
   computeCarryHistory,
   computePartnerCounts,
   computeOpponentCounts,
+  computeEffectiveRatings,
 } from '../utils/scheduler';
 import { computeFairShare, presentPlayers } from '../utils/fairness';
 
@@ -233,12 +234,14 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     const carryHistory = computeCarryHistory(historyMatches);
     const partnerCounts = computePartnerCounts(historyMatches);
     const opponentCounts = computeOpponentCounts(historyMatches);
+    const effectiveRatings = computeEffectiveRatings(session.players, historyMatches);
 
     const options = pickTopAvailableFoursomeOptions(available, {
       fairShare,
       partnerCounts,
       opponentCounts,
       carryHistory,
+      effectiveRatings,
     });
     const { split: best } = options[Math.floor(Math.random() * options.length)];
 
@@ -268,12 +271,14 @@ export const MatchQueue: React.FC<MatchQueueProps> = ({
     const carryHistory = computeCarryHistory(historyMatches);
     const partnerCounts = computePartnerCounts(historyMatches);
     const opponentCounts = computeOpponentCounts(historyMatches);
+    const effectiveRatings = computeEffectiveRatings(session.players, historyMatches);
 
     const options = pickTopAvailableFoursomeOptions(available, {
       fairShare,
       partnerCounts,
       opponentCounts,
       carryHistory,
+      effectiveRatings,
     });
     const { split: best } = options[Math.floor(Math.random() * options.length)];
     setSwapP1(best.t1[0].id);

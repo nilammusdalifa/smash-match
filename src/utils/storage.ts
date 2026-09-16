@@ -1,5 +1,6 @@
 import { TournamentSession, Player, GameRules } from '../types/badminton';
-import { generateRotatingDoublesSchedule, initializeCourts, CourtConfig } from './scheduler';
+import { initializeCourts, CourtConfig } from './scheduler';
+import { refreshSuggestions } from './rolling';
 import { auth, database } from './firebase';
 import { ref, set, onValue, off } from 'firebase/database';
 
@@ -107,9 +108,8 @@ export function createNewSession(
   courtConfigs?: CourtConfig[]
 ): TournamentSession {
   const courts = initializeCourts(courtCount, courtConfigs);
-  const { matches, totalRounds } = generateRotatingDoublesSchedule(players, courts, rules);
 
-  const newSession: TournamentSession = {
+  const baseSession: TournamentSession = {
     id: 'session_' + Date.now(),
     name,
     date: new Date().toISOString().split('T')[0],
@@ -118,13 +118,15 @@ export function createNewSession(
     courts,
     players: [...players],
     rules,
-    matches,
+    matches: [],
     currentRound: 1,
-    totalRounds,
+    totalRounds: 0,
     isCompleted: false,
     ownerUid: auth.currentUser?.uid || '',
     pin: generateSessionPin(),
   };
+  const { matches, totalRounds } = refreshSuggestions(baseSession);
+  const newSession: TournamentSession = { ...baseSession, matches, totalRounds };
 
   // Stamp `pin`/`ownerUid` at their own Firebase paths first, so the rules that
   // guard `sessions/{id}/data` have something to resolve against. If auth isn't

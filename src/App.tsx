@@ -15,8 +15,8 @@ import {
 } from './utils/storage';
 import { auth, ensureAnonymousAuth } from './utils/firebase';
 import { recomputeAllRatings } from './utils/ranking';
-import { generateId, regenerateRemainingSchedule } from './utils/scheduler';
-import { refreshSuggestions } from './utils/rolling';
+import { generateId } from './utils/scheduler';
+import { refreshSuggestions, rerollMatch, trimSurplusScheduledMatches } from './utils/rolling';
 import { Navbar } from './components/Navbar';
 import { CourtBoard } from './components/CourtBoard';
 import { MatchQueue } from './components/MatchQueue';
@@ -99,6 +99,28 @@ export default function App() {
     saveSession(repaired);
     pushSessionOwnershipToFirebase(repaired);
   }, [authReady, isRemoteMode, session]);
+
+  // One-time migration for a session saved under the old batch generator,
+  // which could leave several 'scheduled' matches queued on the same
+  // court. Rolling generation only ever creates one per idle court, so
+  // this can't recur once trimmed — the effect's own trim makes
+  // `hasSurplus` false on the next render, so it naturally runs once.
+  useEffect(() => {
+    if (!session || isRemoteMode) return;
+    const scheduledPerCourt = new Map<string, number>();
+    session.matches.forEach((m) => {
+      if (m.status !== 'scheduled') return;
+      const key = m.courtId ?? '';
+      scheduledPerCourt.set(key, (scheduledPerCourt.get(key) || 0) + 1);
+    });
+    const hasSurplus = [...scheduledPerCourt.values()].some((count) => count > 1);
+    if (!hasSurplus) return;
+    const trimmedMatches = trimSurplusScheduledMatches(session);
+    const { matches, totalRounds } = refreshSuggestions({ ...session, matches: trimmedMatches });
+    const migrated: TournamentSession = { ...session, matches, totalRounds };
+    setSession(migrated);
+    persistSession(migrated);
+  }, [session, isRemoteMode]);
 
   // In remote mode, writes go straight to Firebase instead of localStorage —
   // this isn't "this device's" session to keep locally.
@@ -340,7 +362,7 @@ export default function App() {
       p.id === playerId ? { ...p, skillLevel: tier } : p
     );
     const sessionWithTier = { ...session, players: updatedPlayers };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithTier);
+    const { matches, totalRounds } = refreshSuggestions(sessionWithTier);
     const nextSession: TournamentSession = { ...sessionWithTier, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
@@ -368,7 +390,7 @@ export default function App() {
       arrivedAt: Date.now(),
     };
     const sessionWithPlayer = { ...session, players: [...session.players, newPlayer] };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPlayer);
+    const { matches, totalRounds } = refreshSuggestions(sessionWithPlayer);
     const nextSession: TournamentSession = { ...sessionWithPlayer, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
@@ -410,7 +432,7 @@ export default function App() {
         : { ...p, leftAt: now };
     });
     const sessionWithPresence = { ...session, players: updatedPlayers };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPresence);
+    const { matches, totalRounds } = refreshSuggestions(sessionWithPresence);
     const nextSession: TournamentSession = { ...sessionWithPresence, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
@@ -421,7 +443,7 @@ export default function App() {
   const handleSetRequestedPairs = (pairs: Array<[string, string]>) => {
     if (!session) return;
     const sessionWithPairs = { ...session, requestedPairs: pairs };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithPairs);
+    const { matches, totalRounds } = refreshSuggestions(sessionWithPairs);
     const nextSession: TournamentSession = { ...sessionWithPairs, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
@@ -455,7 +477,7 @@ export default function App() {
     });
 
     const sessionWithCourts = { ...session, courtCount: newCount, courts: newCourts };
-    const { matches, totalRounds } = regenerateRemainingSchedule(sessionWithCourts);
+    const { matches, totalRounds } = refreshSuggestions(sessionWithCourts);
     const nextSession: TournamentSession = { ...sessionWithCourts, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);

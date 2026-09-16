@@ -63,6 +63,27 @@ export function computeFairShare(
     });
   });
 
+  // Safety net for a late arrival who was never marked Away: without this,
+  // an undefined `arrivedAt` makes them look present since session start,
+  // so they can accrue several games of unearned "catch-up" deficit and get
+  // force-played match after match once they're finally scheduled. Anyone
+  // who has actually played anchors the ceiling, so this only ever clamps a
+  // never-played player's deficit — it never touches someone who's played
+  // at least once, and it never overrides correct arrivedAt/leftAt
+  // accounting (a correctly-marked latecomer already has deficit 0 and
+  // never approaches the ceiling).
+  const playedDeficits: number[] = [];
+  stats.forEach((s, id) => {
+    if (s.played > 0) playedDeficits.push(deficitOf(stats, id));
+  });
+  const ceiling = (playedDeficits.length > 0 ? Math.max(...playedDeficits) : 0) + 1.0;
+  stats.forEach((s) => {
+    const deficit = s.entitled - s.played;
+    if (deficit > ceiling) {
+      s.entitled = s.played + ceiling;
+    }
+  });
+
   return stats;
 }
 

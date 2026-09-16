@@ -122,6 +122,9 @@ export function createNewSession(
     currentRound: 1,
     totalRounds: 0,
     isCompleted: false,
+    // A brand-new session starts clean under the rolling model, so the
+    // one-time batch-generator cleanup has nothing to do here.
+    rollingMigrated: true,
     ownerUid: auth.currentUser?.uid || '',
     pin: generateSessionPin(),
   };

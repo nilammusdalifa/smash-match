@@ -1,5 +1,5 @@
-import { Match, Player, GameRules, Court, TournamentSession } from '../types/badminton';
-import { computeFairShare, deficitOf, FairShareStats, FAIR_SHARE_EPSILON } from './fairness';
+import { Match, Player, Court } from '../types/badminton';
+import { deficitOf, FairShareStats, FAIR_SHARE_EPSILON } from './fairness';
 import { computeEffectiveRatings } from './strength';
 
 export { computeEffectiveRatings };
@@ -110,9 +110,11 @@ interface FairnessHistory {
  *    pairing for the second time running.
  * 3. Carry/hard balance — nudges each player's carry vs. hard game count
  *    back toward parity over the session.
- * 4. Repeat partnerships (existing tiebreak).
- * 5. Repeat opponents — lowest priority; nudges away from facing the same
- *    pair across the net over and over, but never at the expense of 1-4.
+ * 4. Rating balance — keeps the two teams' average effective rating (Elo +
+ *    recent form) close; bucketed so it only breaks ties left by 1-3.
+ * 5. Repeat partnerships (existing tiebreak).
+ * 6. Repeat opponents — lowest priority; nudges away from facing the same
+ *    pair across the net over and over, but never at the expense of 1-5.
  * Exported as a plain number (not just a comparator) so `pickBestFoursome`
  * can compare candidate foursomes against each other, not just compare
  * splits within one fixed foursome.

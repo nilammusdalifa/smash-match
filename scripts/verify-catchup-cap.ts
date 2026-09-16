@@ -61,5 +61,34 @@ const freshLate = { ...mkPlayer('FRESH'), arrivedAt: SESSION_START + 90 * MINUTE
 const withFresh = computeFairShare(played, [...p0123, freshLate], SESSION_START);
 check('correctly-marked latecomer still gets 0 deficit', deficitOf(withFresh, 'FRESH'), 0);
 
+// The clamp must fire ONLY for a player the app wrongly believes has been
+// here since session start (arrivedAt === undefined). A latecomer who WAS
+// marked in — here, correctly stamped just after match 1, so they were
+// present for matches 2 and 3 but played neither — has a legitimately
+// earned deficit and must pass through untouched, otherwise they lose all
+// priority ordering against the never-marked case.
+const midLate = { ...mkPlayer('MID'), arrivedAt: SESSION_START + 20 * MINUTE };
+const withMid = computeFairShare(played, [...p0123, midLate], SESSION_START);
+// Match 1 (t+10m): MID not yet present — 4 players share, MID gets 0.
+// Matches 2 (t+30m) and 3 (t+50m): 5 present — MID earns 4/5 each.
+// MID played none, so deficit = 0.8 + 0.8 = 1.6, well above the ceiling
+// (max played-deficit + 1.0), and must NOT be clamped down to it.
+check('correctly-marked mid-session latecomer keeps their full deficit', deficitOf(withMid, 'MID'), 1.6);
+// P0-P3 played all 3: entitled 1 + 0.8 + 0.8 = 2.6, played 3.
+check('P0 deficit alongside a marked mid-session latecomer', deficitOf(withMid, 'P0'), 2.6 - 3);
+// The old unguarded clamp would have pulled MID down to this ceiling
+// (max played-deficit + 1.0 = -0.4 + 1.0 = 0.6). MID must sit strictly
+// above it, which is only possible because of the arrivedAt guard.
+const ceilingForMid = deficitOf(withMid, 'P0') + 1.0;
+check('MID escapes the ceiling the old clamp would have applied', deficitOf(withMid, 'MID') > ceilingForMid ? 1 : 0, 1);
+
+// ...while the never-marked-away latecomer in the SAME shape of session is
+// still clamped, proving the guard narrowed the cap rather than removing it.
+const unmarkedLate = mkPlayer('UNMARKED');
+const withUnmarked = computeFairShare(played, [...p0123, unmarkedLate], SESSION_START);
+// Present (as far as the app knows) for all 3: entitled 3 * 4/5 = 2.4,
+// played 0 — clamped to ceiling = -0.6 + 1.0 = 0.4.
+check('never-marked latecomer is still clamped', deficitOf(withUnmarked, 'UNMARKED'), 0.4);
+
 console.log(failures === 0 ? '\nALL PASS' : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

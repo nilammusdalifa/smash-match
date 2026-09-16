@@ -1,5 +1,5 @@
 import { Court, Match, Player, TournamentSession } from '../types/badminton';
-import { computeFairShare, presentPlayers } from './fairness';
+import { computeFairShare, deficitOf, presentPlayers, FAIR_SHARE_EPSILON } from './fairness';
 import {
   generateId,
   isCarryPairing,
@@ -91,8 +91,26 @@ export function refreshSuggestions(session: TournamentSession): { matches: Match
       const [aId, bId] = outstanding[requestIdx];
       const pa = eligible.find((p) => p.id === aId)!;
       const pb = eligible.find((p) => p.id === bId)!;
-      const candidates = eligible.filter((p) => p.id !== aId && p.id !== bId);
-      if (candidates.length >= 2) {
+      const rest = eligible.filter((p) => p.id !== aId && p.id !== bId);
+      if (rest.length >= 2) {
+        // Honoring a request must not cost someone else their turn: the two
+        // filler slots still go to whoever is owed the most court time.
+        // Mirrors the mustPlay/tiedCandidates split in
+        // `pickBestAvailableFoursome`, with the cutoff taken at the
+        // 2nd-highest deficit because 2 slots are being filled, plus an
+        // epsilon tie band so equally-owed players all stay in contention
+        // for the tier/carry/rating/variety choice among them.
+        const byDeficit = [...rest].sort(
+          (a, b) => deficitOf(fairShare, b.id) - deficitOf(fairShare, a.id)
+        );
+        const cutoffDeficit = deficitOf(fairShare, byDeficit[1].id);
+        const band = byDeficit.filter(
+          (p) => deficitOf(fairShare, p.id) - cutoffDeficit >= -FAIR_SHARE_EPSILON
+        );
+        // `band` always holds at least the top two by construction; the
+        // fallback is a guard so a request is never dropped for want of
+        // candidates.
+        const candidates = band.length >= 2 ? band : rest;
         const picked = pickFoursomeWithRequiredPair([pa, pb], candidates, history);
         four = picked.four;
         split = picked.split;
@@ -223,6 +241,23 @@ export function rerollMatch(
 }
 
 /**
+ * Drops still-`scheduled` matches parked on a court that no longer exists.
+ * Shrinking the court count would otherwise strand them in
+ * `session.matches` forever: `refreshSuggestions` derives its idle courts
+ * from `session.courts`, so it never sees the orphan, while the orphan's 4
+ * players stay counted "busy" by every later eligible-pool computation —
+ * silently shrinking the playable roster. `completed`/`in_progress`
+ * matches keep their historical court id untouched, and a scheduled match
+ * with no court assigned isn't on a removed court, so it stays too.
+ */
+export function dropScheduledMatchesOnRemovedCourts(matches: Match[], courts: Court[]): Match[] {
+  const courtIds = new Set(courts.map((c) => c.id));
+  return matches.filter(
+    (m) => m.status !== 'scheduled' || m.courtId === undefined || courtIds.has(m.courtId)
+  );
+}
+
+/**
  * One-time cleanup for a session saved before rolling generation existed:
  * keeps only the earliest (lowest matchNumber) `scheduled` match per court
  * and drops the rest. `completed`/`in_progress` matches are never touched.
@@ -245,4 +280,40 @@ export function trimSurplusScheduledMatches(session: TournamentSession): Match[]
   });
 
   return [...nonScheduled, ...kept];
+}
+
+/**
+ * The one-time cleanup a session saved under the old batch generator needs:
+ * that generator could leave several `scheduled` matches queued on the same
+ * court, and rolling generation assumes at most one it created itself.
+ *
+ * Gated on the persisted `rollingMigrated` flag rather than on the surplus
+ * itself. Custom Match deliberately queues a SECOND scheduled match on a
+ * court (it runs sequentially, after whatever's already there), so a
+ * surplus-based gate would fire again the moment someone used that feature
+ * and silently delete their match. Every session that predates the flag is
+ * checked and stamped exactly once on its next load — including one that's
+ * already clean, which just gets the stamp.
+ *
+ * Returns the migrated session, or null when there is nothing to do.
+ */
+export function migrateRollingSession(session: TournamentSession): TournamentSession | null {
+  if (session.rollingMigrated) return null;
+
+  const scheduledPerCourt = new Map<string, number>();
+  session.matches.forEach((m) => {
+    if (m.status !== 'scheduled') return;
+    const key = m.courtId ?? '';
+    scheduledPerCourt.set(key, (scheduledPerCourt.get(key) || 0) + 1);
+  });
+  const hasSurplus = [...scheduledPerCourt.values()].some((count) => count > 1);
+
+  let matches = session.matches;
+  let totalRounds = session.totalRounds;
+  if (hasSurplus) {
+    const trimmedMatches = trimSurplusScheduledMatches(session);
+    ({ matches, totalRounds } = refreshSuggestions({ ...session, matches: trimmedMatches }));
+  }
+
+  return { ...session, matches, totalRounds, rollingMigrated: true };
 }

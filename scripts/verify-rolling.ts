@@ -1,4 +1,10 @@
-import { refreshSuggestions, rerollMatch, trimSurplusScheduledMatches } from '../src/utils/rolling';
+import {
+  refreshSuggestions,
+  rerollMatch,
+  trimSurplusScheduledMatches,
+  dropScheduledMatchesOnRemovedCourts,
+  eligiblePlayersForCourt,
+} from '../src/utils/rolling';
 import { initializeCourts } from '../src/utils/scheduler';
 import { Match, Player, TournamentSession } from '../src/types/badminton';
 
@@ -101,6 +107,77 @@ const trimmed = trimSurplusScheduledMatches(staleSession);
 const trimmedScheduled = trimmed.filter((m) => m.status === 'scheduled');
 check('trims 3 stale scheduled matches on 1 court down to 1', trimmedScheduled.length === 1);
 check('keeps the earliest by matchNumber', trimmedScheduled[0].id === 'stale1');
+
+// A honored partner request must not hand the two filler slots to whoever
+// happens to fit best on tier gap, ignoring who is actually owed court
+// time. P0/P1 (both A) ask to play together; P2/P3 (also A) have played
+// all 3 matches so far, while P4-P7 (B) have played none. Pairing the
+// request against P2+P3 or P2+P4 is the cheapest answer on tier gap alone,
+// so the fillers must instead be drawn from the much-higher-deficit B pool.
+const TIER_SESSION_START = 1_000_000;
+const MINUTE = 60_000;
+function mkTiered(id: string, tier: 'A' | 'B'): Player {
+  return { id, name: id, initialRating: 1200, currentRating: 1200, skillLevel: tier, active: true };
+}
+const tieredPlayers: Player[] = [
+  mkTiered('P0', 'A'), mkTiered('P1', 'A'), mkTiered('P2', 'A'), mkTiered('P3', 'A'),
+  mkTiered('P4', 'B'), mkTiered('P5', 'B'), mkTiered('P6', 'B'), mkTiered('P7', 'B'),
+];
+// P0+P2 vs P1+P3 three times over — keeps P0 and P1 from ever having been
+// teammates, so their request still counts as outstanding.
+const tieredHistory: Match[] = [1, 2, 3].map((n) => ({
+  id: 'h' + n,
+  roundNumber: n,
+  matchNumber: n,
+  courtId: '1',
+  startTime: TIER_SESSION_START + n * 10 * MINUTE,
+  endTime: TIER_SESSION_START + n * 10 * MINUTE + 5 * MINUTE,
+  team1: { player1: mkTiered('P0', 'A'), player2: mkTiered('P2', 'A') },
+  team2: { player1: mkTiered('P1', 'A'), player2: mkTiered('P3', 'A') },
+  score: { team1Score: 30, team2Score: 20, isCompleted: true },
+  status: 'completed',
+}));
+const tieredSession: TournamentSession = {
+  ...mkSession(8, 1, tieredHistory),
+  createdAt: TIER_SESSION_START,
+  players: tieredPlayers,
+  requestedPairs: [['P0', 'P1']],
+};
+const { matches: afterTieredRefresh } = refreshSuggestions(tieredSession);
+const tieredNew = afterTieredRefresh.find((m) => m.status === 'scheduled');
+check('a suggestion is generated for the tiered partner-request session', tieredNew !== undefined);
+if (tieredNew) {
+  const ids = [tieredNew.team1.player1.id, tieredNew.team1.player2.id, tieredNew.team2.player1.id, tieredNew.team2.player2.id];
+  check('requested pair P0/P1 is in the match', ids.includes('P0') && ids.includes('P1'));
+  const fillers = ids.filter((id) => id !== 'P0' && id !== 'P1');
+  check(
+    'partner-request fillers come from the highest-deficit pool (P4-P7), not the already-played A tier',
+    fillers.length === 2 && fillers.every((id) => ['P4', 'P5', 'P6', 'P7'].includes(id))
+  );
+  check('no filler has already played all 3 matches', !fillers.includes('P2') && !fillers.includes('P3'));
+}
+
+// Shrinking the court count must not strand a scheduled match on a court
+// that no longer exists: refreshSuggestions only inspects session.courts,
+// so the orphan would never be regenerated away while its 4 players stayed
+// counted "busy" in every future eligible pool.
+const twoCourt = mkSession(8, 2);
+const { matches: twoCourtMatches } = refreshSuggestions(twoCourt);
+const shrunkCourts = initializeCourts(1);
+const stranded: TournamentSession = { ...twoCourt, matches: twoCourtMatches, courtCount: 1, courts: shrunkCourts };
+check('court-2 match is still present before the cleanup runs', twoCourtMatches.some((m) => m.courtId === '2'));
+check('and would otherwise leave nobody free for a later match', eligiblePlayersForCourt(stranded).length === 0);
+
+const cleanedMatches = dropScheduledMatchesOnRemovedCourts(twoCourtMatches, shrunkCourts);
+const cleaned: TournamentSession = { ...stranded, matches: cleanedMatches };
+check('scheduled match on the removed court is dropped', !cleanedMatches.some((m) => m.status === 'scheduled' && m.courtId === '2'));
+check('the surviving court keeps its scheduled match', cleanedMatches.filter((m) => m.status === 'scheduled').length === 1);
+check('its 4 players are free again for future matches', eligiblePlayersForCourt(cleaned).length === 4);
+
+// A completed match on a court that is later removed keeps its history.
+const playedOnRemoved: Match = { ...twoCourtMatches.find((m) => m.courtId === '2')!, id: 'done2', status: 'completed' };
+const withHistory = dropScheduledMatchesOnRemovedCourts([...cleanedMatches, playedOnRemoved], shrunkCourts);
+check('a completed match on a removed court is kept', withHistory.some((m) => m.id === 'done2'));
 
 console.log(failures === 0 ? '\nALL PASS' : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

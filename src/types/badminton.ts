@@ -86,6 +86,13 @@ export interface TournamentSession {
   currentRound: number;
   totalRounds: number;
   isCompleted: boolean;
+  /**
+   * Marks a session as already past the one-time batch-generator-era
+   * cleanup (App.tsx's migration effect). Once set, several `scheduled`
+   * matches on one court are trusted as intentional — Custom Match queues
+   * them on purpose — rather than treated as legacy debris to trim.
+   */
+  rollingMigrated?: boolean;
   ownerUid: string;
   pin: string;
 }

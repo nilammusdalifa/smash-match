@@ -68,16 +68,24 @@ export function computeFairShare(
   // so they can accrue several games of unearned "catch-up" deficit and get
   // force-played match after match once they're finally scheduled. Anyone
   // who has actually played anchors the ceiling, so this only ever clamps a
-  // never-played player's deficit — it never touches someone who's played
-  // at least once, and it never overrides correct arrivedAt/leftAt
-  // accounting (a correctly-marked latecomer already has deficit 0 and
-  // never approaches the ceiling).
+  // never-played player's deficit.
+  //
+  // It is deliberately restricted to players with NO `arrivedAt` at all —
+  // that is precisely the "the app thinks they've been here since session
+  // start" case this guards against. A latecomer whose arrival WAS marked
+  // (arrivedAt set) has a legitimately earned deficit, however large, and
+  // passes through unclamped: someone marked in at the halfway point is
+  // genuinely owed more court time than someone who's been playing all
+  // night, and clamping both to the same ceiling would erase that real
+  // priority ordering.
+  const byId = new Map(players.map((p) => [p.id, p]));
   const playedDeficits: number[] = [];
   stats.forEach((s, id) => {
     if (s.played > 0) playedDeficits.push(deficitOf(stats, id));
   });
   const ceiling = (playedDeficits.length > 0 ? Math.max(...playedDeficits) : 0) + 1.0;
-  stats.forEach((s) => {
+  stats.forEach((s, id) => {
+    if (byId.get(id)?.arrivedAt !== undefined) return;
     const deficit = s.entitled - s.played;
     if (deficit > ceiling) {
       s.entitled = s.played + ceiling;

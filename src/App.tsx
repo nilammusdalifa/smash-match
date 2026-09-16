@@ -16,7 +16,12 @@ import {
 import { auth, ensureAnonymousAuth } from './utils/firebase';
 import { recomputeAllRatings } from './utils/ranking';
 import { generateId } from './utils/scheduler';
-import { refreshSuggestions, rerollMatch, trimSurplusScheduledMatches } from './utils/rolling';
+import {
+  refreshSuggestions,
+  rerollMatch,
+  migrateRollingSession,
+  dropScheduledMatchesOnRemovedCourts,
+} from './utils/rolling';
 import { Navbar } from './components/Navbar';
 import { CourtBoard } from './components/CourtBoard';
 import { MatchQueue } from './components/MatchQueue';
@@ -100,24 +105,15 @@ export default function App() {
     pushSessionOwnershipToFirebase(repaired);
   }, [authReady, isRemoteMode, session]);
 
-  // One-time migration for a session saved under the old batch generator,
-  // which could leave several 'scheduled' matches queued on the same
-  // court. Rolling generation only ever creates one per idle court, so
-  // this can't recur once trimmed — the effect's own trim makes
-  // `hasSurplus` false on the next render, so it naturally runs once.
+  // One-time cleanup for a session saved under the old batch generator.
+  // `migrateRollingSession` returns null once a session carries the
+  // persisted `rollingMigrated` stamp, so this runs exactly once per
+  // pre-existing session and never again — it can't come back later and
+  // delete a second match a user queued on purpose via Custom Match.
   useEffect(() => {
     if (!session || isRemoteMode) return;
-    const scheduledPerCourt = new Map<string, number>();
-    session.matches.forEach((m) => {
-      if (m.status !== 'scheduled') return;
-      const key = m.courtId ?? '';
-      scheduledPerCourt.set(key, (scheduledPerCourt.get(key) || 0) + 1);
-    });
-    const hasSurplus = [...scheduledPerCourt.values()].some((count) => count > 1);
-    if (!hasSurplus) return;
-    const trimmedMatches = trimSurplusScheduledMatches(session);
-    const { matches, totalRounds } = refreshSuggestions({ ...session, matches: trimmedMatches });
-    const migrated: TournamentSession = { ...session, matches, totalRounds };
+    const migrated = migrateRollingSession(session);
+    if (!migrated) return;
     setSession(migrated);
     persistSession(migrated);
   }, [session, isRemoteMode]);
@@ -206,12 +202,22 @@ export default function App() {
         ? session.courts.map((c) => (c.currentMatchId === matchId ? { ...c, currentMatchId: undefined } : c))
         : session.courts;
 
-      const nextSession: TournamentSession = {
+      let nextSession: TournamentSession = {
         ...session,
         players: updatedPlayers,
         courts: updatedCourts,
         matches: nextMatches,
       };
+
+      // A freshly completed match leaves its court idle, so the rolling
+      // engine has to queue that court's next suggestion right here —
+      // otherwise the court dead-ends after its one match with no Start
+      // button and nothing on deck. A score correction to an
+      // already-completed match frees nothing, so it skips the refresh.
+      if (becameCompleted) {
+        const { matches, totalRounds } = refreshSuggestions(nextSession);
+        nextSession = { ...nextSession, matches, totalRounds };
+      }
 
       setSession(nextSession);
       persistSession(nextSession);
@@ -476,17 +482,27 @@ export default function App() {
       return { id, name: typedName || `Court ${id}`, isActive: true };
     });
 
-    const sessionWithCourts = { ...session, courtCount: newCount, courts: newCourts };
+    // A still-scheduled match parked on a court that's going away would
+    // otherwise linger forever: refreshSuggestions only looks at courts that
+    // still exist, so it never sees the orphan while its 4 players stay
+    // counted "busy" in every later eligible-pool computation. Already
+    // played or in-progress matches keep their historical court id.
+    const sessionWithCourts = {
+      ...session,
+      courtCount: newCount,
+      courts: newCourts,
+      matches: dropScheduledMatchesOnRemovedCourts(session.matches, newCourts),
+    };
     const { matches, totalRounds } = refreshSuggestions(sessionWithCourts);
     const nextSession: TournamentSession = { ...sessionWithCourts, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
   };
 
-  // Remove any match — scheduled (freed-up players just sit out that round),
-  // in-progress (e.g. a mis-entered Custom Match), or completed (e.g. a
-  // wrong score that was already saved). Ratings are rebuilt from scratch
-  // afterward since Elo is order-dependent — see recomputeAllRatings.
+  // Remove any match — scheduled, in-progress (e.g. a mis-entered Custom
+  // Match), or completed (e.g. a wrong score that was already saved).
+  // Ratings are rebuilt from scratch afterward since Elo is
+  // order-dependent — see recomputeAllRatings.
   const handleDeleteMatch = (matchId: string) => {
     if (!session) return;
     const match = session.matches.find((m) => m.id === matchId);
@@ -498,12 +514,20 @@ export default function App() {
       c.currentMatchId === matchId ? { ...c, currentMatchId: undefined } : c
     );
 
-    const nextSession: TournamentSession = {
+    const sessionWithDeletion: TournamentSession = {
       ...session,
       matches: remainingMatches,
       players: updatedPlayers,
       courts: updatedCourts,
     };
+
+    // The deletion frees the court and its 4 players, so the rolling engine
+    // re-queues a suggestion for that now-idle court (and can revise any
+    // other idle court whose deficit ordering the freed players change).
+    // Without this, deleting the one queued match on a court leaves it with
+    // nothing to start.
+    const { matches, totalRounds } = refreshSuggestions(sessionWithDeletion);
+    const nextSession: TournamentSession = { ...sessionWithDeletion, matches, totalRounds };
     setSession(nextSession);
     persistSession(nextSession);
   };

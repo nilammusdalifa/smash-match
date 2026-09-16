@@ -63,6 +63,26 @@ if (rerollResult) {
   void sameFour;
 }
 
+// Partner request: P0 and P1 have never played together and have asked to
+// be teamed up. refreshSuggestions must actually seat them as teammates on
+// one of the new scheduled matches, not just run without throwing.
+const requested: TournamentSession = { ...mkSession(8, 2), requestedPairs: [['P0', 'P1']] };
+const { matches: afterRequestRefresh } = refreshSuggestions(requested);
+const requestScheduled = afterRequestRefresh.filter((m) => m.status === 'scheduled');
+const requestMatch = requestScheduled.find((m) => {
+  const ids = [m.team1.player1.id, m.team1.player2.id, m.team2.player1.id, m.team2.player2.id];
+  return ids.includes('P0') && ids.includes('P1');
+});
+check('requested pair P0/P1 is placed in a scheduled match', requestMatch !== undefined);
+if (requestMatch) {
+  const team1Ids = [requestMatch.team1.player1.id, requestMatch.team1.player2.id];
+  const team2Ids = [requestMatch.team2.player1.id, requestMatch.team2.player2.id];
+  const sameTeam =
+    (team1Ids.includes('P0') && team1Ids.includes('P1')) ||
+    (team2Ids.includes('P0') && team2Ids.includes('P1'));
+  check('requested pair P0/P1 are teammates, not opponents', sameTeam);
+}
+
 // Migration: an old-format session with 3 stale scheduled matches queued on
 // a single court gets trimmed to 1 (the earliest by matchNumber).
 const staleCourt = initializeCourts(1);

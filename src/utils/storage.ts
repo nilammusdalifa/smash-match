@@ -108,15 +108,25 @@ export function createNewSession(
   courtConfigs?: CourtConfig[]
 ): TournamentSession {
   const courts = initializeCourts(courtCount, courtConfigs);
+  const createdAt = Date.now();
+
+  // Everyone starts Away by default — the host marks people Here as they
+  // actually show up, and the rolling engine generates the first match the
+  // moment 4 are present (refreshSuggestions already skips any court with
+  // fewer than 4 eligible players). Stamping `leftAt: createdAt` is what
+  // "Away since before the session even started" means to isPresentAt();
+  // marking someone Here (handleSetPlayerPresence) clears it and stamps a
+  // real arrivedAt, same as any other Away -> Here transition.
+  const playersAwayByDefault = players.map((p) => ({ ...p, leftAt: createdAt }));
 
   const baseSession: TournamentSession = {
-    id: 'session_' + Date.now(),
+    id: 'session_' + createdAt,
     name,
     date: new Date().toISOString().split('T')[0],
-    createdAt: Date.now(),
+    createdAt,
     courtCount,
     courts,
-    players: [...players],
+    players: playersAwayByDefault,
     rules,
     matches: [],
     currentRound: 1,

@@ -52,8 +52,7 @@ export const AttendanceModal: React.FC<AttendanceModalProps> = ({
         </div>
 
         <p className="px-5 pt-3 text-xs text-slate-400 light:text-slate-500">
-          Mark anyone who isn't here yet. They're skipped in the schedule
-          until you mark them back.
+          Mark people here as they arrive — matches start once 4 are in.
         </p>
 
         <div className="p-5 space-y-2 overflow-y-auto min-h-0">

@@ -1,5 +1,8 @@
 import { Match, Player, GameRules, Court, TournamentSession } from '../types/badminton';
 import { presentPlayers, computeFairShare, deficitOf, FairShareStats, FAIR_SHARE_EPSILON } from './fairness';
+import { computeEffectiveRatings } from './strength';
+
+export { computeEffectiveRatings };
 
 /**
  * Generate unique ID
@@ -96,6 +99,7 @@ interface FairnessHistory {
   partnerCounts?: Map<string, number>;
   opponentCounts?: Map<string, number>;
   carryHistory?: Map<string, CarryStats>;
+  effectiveRatings?: Map<string, number>;
 }
 
 /**
@@ -150,10 +154,22 @@ function scoreTeamSplit(c: TeamSplit, history: FairnessHistory): number {
     0
   );
 
+  // Balances team strength within a match. Bucketed at 25 Elo so it acts as
+  // a tie-break rather than a continuous score, and capped at 8 buckets
+  // (200+ Elo gap) so the worst realistic mismatch (8 * 500 = 4000) never
+  // outweighs one carry-balance unit (10000) or a repeat-carry violation
+  // (100000) — see the design spec's rescale rationale.
+  const effectiveRatings = history.effectiveRatings || new Map<string, number>();
+  const ratingOf = (p: Player) => effectiveRatings.get(p.id) ?? p.currentRating;
+  const avgRating1 = (ratingOf(c.t1[0]) + ratingOf(c.t1[1])) / 2;
+  const avgRating2 = (ratingOf(c.t2[0]) + ratingOf(c.t2[1])) / 2;
+  const ratingGapBucket = Math.min(8, Math.round(Math.abs(avgRating1 - avgRating2) / 25));
+
   return (
-    tierGapBucket * 10000 +
-    repeatCarryViolations * 1000 +
-    carryBalanceScore * 100 +
+    tierGapBucket * 1000000 +
+    repeatCarryViolations * 100000 +
+    carryBalanceScore * 10000 +
+    ratingGapBucket * 500 +
     partnerCost * 10 +
     opponentCost
   );

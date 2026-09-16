@@ -401,11 +401,14 @@ const withLate = computeFairShare(played, roster, SESSION_START);
 // Ceiling = max(deficit among played>=1) + 1.0 = -0.6 + 1.0 = 0.4.
 check('LATE deficit is clamped to the ceiling, not the raw 2.4', deficitOf(withLate, 'LATE'), 0.4);
 
-// Honest players who actually played are untouched by the cap — compare
-// against a run with no bugged latecomer in the roster at all.
-const withoutLate = computeFairShare(played, p0123, SESSION_START);
-check('P0 deficit unaffected by the cap', deficitOf(withLate, 'P0'), deficitOf(withoutLate, 'P0'));
-check('P2 deficit unaffected by the cap', deficitOf(withLate, 'P2'), deficitOf(withoutLate, 'P2'));
+// Honest players who actually played are untouched by the cap: their raw
+// deficit (-0.6) is already below the ceiling (0.4), so it passes through
+// unclamped. (Comparing against a roster without LATE would NOT be a valid
+// check here — removing LATE changes the present-count denominator for
+// everyone's entitled share, so P0's deficit would differ from this run
+// regardless of any cap. The direct value is the only correct assertion.)
+check('P0 deficit is untouched by the cap (-0.6, not clamped)', deficitOf(withLate, 'P0'), -0.6);
+check('P2 deficit is untouched by the cap (-0.6, not clamped)', deficitOf(withLate, 'P2'), -0.6);
 
 // A genuinely fresh latecomer (arrivedAt correctly stamped after all 3
 // matches) still accrues nothing extra — the cap must not interfere with
